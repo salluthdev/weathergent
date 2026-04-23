@@ -19,28 +19,24 @@ export default function ObservationDetailPopup({
   preferredUnit,
 }: ObservationDetailPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = () => {
-    if (!isPinned) setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    if (!isPinned) setIsOpen(false);
-  };
-
-  const togglePin = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsPinned(!isPinned);
-    setIsOpen(true);
-  };
-
   useEffect(() => {
     if (isOpen && triggerRef.current) {
-// ... (rest of the positioning effect)
+      const rect = triggerRef.current.getBoundingClientRect();
+      const popupWidth = 256; // w-64
+
+      let top = rect.top + window.scrollY - 20;
+      let left = rect.left + rect.width + window.scrollX + 8;
+
+      if (left + popupWidth > window.innerWidth) {
+        left = rect.left + window.scrollX - popupWidth - 8;
+      }
+
+      top = Math.max(window.scrollY + 10, top);
+      setCoords({ top, left });
     }
   }, [isOpen]);
 
@@ -54,14 +50,14 @@ export default function ObservationDetailPopup({
         !triggerRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
-        setIsPinned(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  if (!temp) return null;
+  // Hide icon if no metadata to show
+  if (!temp || (!exactTime && !syncedAt)) return null;
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
@@ -69,15 +65,13 @@ export default function ObservationDetailPopup({
     <div className="inline-block ml-2">
       <button
         ref={triggerRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={togglePin}
+        onClick={() => setIsOpen(!isOpen)}
         className={`p-1 rounded-md transition-all flex items-center justify-center ${
-          isPinned || isOpen 
+          isOpen 
             ? "bg-[#3d5516] text-[#c8ea8e] shadow-sm" 
             : "bg-[#3d5516]/5 text-[#3d5516]/40 hover:bg-[#3d5516]/10 hover:text-[#3d5516]"
         }`}
-        title={isPinned ? "Click to Unpin" : "Hover to preview, Click to pin"}
+        title="View Metadata"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -115,10 +109,7 @@ export default function ObservationDetailPopup({
                 {source} Metadata
               </h3>
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsPinned(false);
-                }}
+                onClick={() => setIsOpen(false)}
                 className="text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
               >
                 <svg

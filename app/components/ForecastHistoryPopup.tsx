@@ -27,24 +27,9 @@ export default function ForecastHistoryPopup({
   preferredUnit,
 }: ForecastHistoryPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
-
-  const handleMouseEnter = () => {
-    if (!isPinned) setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    if (!isPinned) setIsOpen(false);
-  };
-
-  const togglePin = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsPinned(!isPinned);
-    setIsOpen(true);
-  };
 
   // Only consider history items that have a different temperature than the current one
   const filteredHistory =
@@ -85,15 +70,14 @@ export default function ForecastHistoryPopup({
         !triggerRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
-        setIsPinned(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // if (filteredHistory.length === 0) return null; // Remove this so metadata is always visible
-  const hasHistory = filteredHistory.length > 0;
+  // Hide icon if no history data to show
+  if (filteredHistory.length === 0) return null;
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
@@ -101,15 +85,13 @@ export default function ForecastHistoryPopup({
     <div className="inline-block ml-2">
       <button
         ref={triggerRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onClick={togglePin}
+        onClick={() => setIsOpen(!isOpen)}
         className={`p-1 rounded-md transition-all flex items-center justify-center ${
-          isPinned || isOpen 
+          isOpen 
             ? "bg-[#3d5516] text-[#c8ea8e] shadow-sm" 
             : "bg-[#3d5516]/10 text-[#3d5516] hover:bg-[#3d5516]/20"
         }`}
-        title={isPinned ? "Click to Unpin" : "Hover to preview, Click to pin"}
+        title="View Forecast History"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -146,10 +128,7 @@ export default function ForecastHistoryPopup({
                 Forecast Evolution
               </h3>
               <button
-                onClick={() => {
-                  setIsOpen(false);
-                  setIsPinned(false);
-                }}
+                onClick={() => setIsOpen(false)}
                 className="text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
               >
                 <svg
@@ -188,19 +167,6 @@ export default function ForecastHistoryPopup({
                   </div>
                   {updatedAt && (
                     <div className="flex flex-col gap-0.5">
-                      {/* <span className="text-[10px] font-medium text-[#3d5516]/40 leading-tight">
-                        Last sync:{" "}
-                        {new Date(updatedAt).toLocaleString("en-US", {
-                          timeZone: timezone,
-                          month: "short",
-                          day: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}{" "}
-                        ({cityName})
-                      </span> */}
                       <span className="text-[10px] font-medium text-[#3d5516]/40 leading-tight">
                         Last sync:{" "}
                         {new Date(updatedAt).toLocaleString("en-US", {
@@ -224,41 +190,38 @@ export default function ForecastHistoryPopup({
                 <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase px-1">
                   Previous Versions
                 </p>
-                  {hasHistory ? (
-                    <div className="flex flex-col gap-2 divide-y divide-[#3d5516]/5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                      {filteredHistory
-                        .slice()
-                        .reverse()
-                        .map((item, idx) => (
-                          <div key={idx} className="pt-2 px-1 flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-[#3d5516]/70">
-                                {preferredUnit === "F" ? `${toF(item.temp)}°F` : `${item.temp}°C`}
-                              </span>
-                              <span className="text-[10px] font-bold text-[#3d5516]/40">
-                                {item.condition}
-                              </span>
-                            </div>
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
-                                Last sync:{" "}
-                                {new Date(item.updated_at).toLocaleString("en-US", {
-                                  timeZone: "Asia/Jakarta",
-                                  month: "short",
-                                  day: "2-digit",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })} (WIB)
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] italic text-[#3d5516]/30 px-1">No previous versions available</p>
-                  )}
+                <div className="flex flex-col gap-2 divide-y divide-[#3d5516]/5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                  {filteredHistory
+                    .slice()
+                    .reverse()
+                    .map((item, idx) => (
+                      <div key={idx} className="pt-2 px-1 flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#3d5516]/70">
+                            {preferredUnit === "F" ? `${toF(item.temp)}°F` : `${item.temp}°C`}
+                          </span>
+                          <span className="text-[10px] font-bold text-[#3d5516]/40">
+                            {item.condition}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
+                            Last sync:{" "}
+                            {new Date(item.updated_at).toLocaleString("en-US", {
+                              timeZone: "Asia/Jakarta",
+                              month: "short",
+                              day: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}{" "}
+                            (WIB)
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
             </div>
           </div>,
