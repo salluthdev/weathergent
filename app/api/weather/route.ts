@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCityBySlug } from "@/lib/config";
-import { getWeatherFromSupabase } from "@/lib/weather-service";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { getWeatherFromDb } from "@/lib/weather-service";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -28,9 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const result = await getWeatherFromSupabase(city, date, supabase);
+    const result = await getWeatherFromDb(city, date);
 
     if (!result) {
       return NextResponse.json(
