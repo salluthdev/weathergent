@@ -268,30 +268,18 @@ export default async function CityDetailPage({
             <h2 className="text-lg font-bold opacity-60 uppercase tracking-tight">
               Summary
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div className="p-4 rounded-xl bg-white/60">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Max History (WU)
                 </p>
                 <p className="text-lg font-bold">{formatTemp(maxTemp)}</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/60">
-                <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Min History (WU)
-                </p>
-                <p className="text-lg font-bold">{formatTemp(minTemp)}</p>
-              </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Max Forecast (WU)
                 </p>
                 <p className="text-lg font-bold">{formatTemp(forecastMax)}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
-                <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Min Forecast (WU)
-                </p>
-                <p className="text-lg font-bold">{formatTemp(forecastMin)}</p>
               </div>
             </div>
           </div>
