@@ -1,18 +1,23 @@
 module.exports = {
   apps: [
     {
-      name: 'weather-sync',
-      script: './scripts/sync-worker.ts',
-      interpreter: 'bun',
-      // Cron restart every 10 minutes
-      cron_restart: '*/10 * * * *',
-      // Don't restart immediately on exit; wait for the cron schedule
-      autorestart: false,
-
-      watch: false,
+      name: "weather-app",
+      script: "bun",
+      args: "run start",
       env: {
-        NODE_ENV: 'production',
-      },
+        NODE_ENV: "production",
+        PORT: 3000
+      }
     },
-  ],
+    {
+      name: "weather-sync",
+      script: "bun",
+      args: "run scripts/sync-worker.ts",
+      cron_restart: "*/2 * * * *", // Restart every 2 minutes
+      autorestart: false,
+      env: {
+        NODE_ENV: "production"
+      }
+    }
+  ]
 };
