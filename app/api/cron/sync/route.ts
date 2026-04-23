@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CITIES } from "@/lib/config";
 import { syncCityData } from "@/lib/weather-service";
-import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
   // 1. Security Check: Verify the Authorization header
@@ -9,19 +8,6 @@ export async function GET(request: NextRequest) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
-
-  // 2. Initialize Supabase Admin (using Service Role Key)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.json(
-      { error: "Configuration missing: Supabase URL or Service Role Key" },
-      { status: 500 }
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
 
   console.log(`[Cron] Starting global weather sync for ${CITIES.length} cities...`);
 
@@ -38,7 +24,7 @@ export async function GET(request: NextRequest) {
     const [m, d, y] = now.split("/");
     const todayStr = `${y}${m}${d}`;
 
-    const res = await syncCityData(city, todayStr, supabase);
+    const res = await syncCityData(city, todayStr);
     results.push({ city: city.name, ...res });
   }
 

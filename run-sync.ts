@@ -14,7 +14,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function runSync() {
   const city = CITIES.find(c => c.slug === "jakarta");
   if (!city) return;
-  await syncCityData(city, "20260423", supabase);
+  await syncCityData(city, "20260423");
+  process.exit(0);
 }
 
 runSync();
