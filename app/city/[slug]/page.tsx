@@ -182,6 +182,13 @@ export default async function CityDetailPage({
     return cityData.preferredUnit === "F" ? `${toF(c)}°F` : `${c}°C`;
   };
 
+  // Find the last occurrence of max values for highlighting
+  const lastMaxHistoryIdx = hourlyReport.reduce((acc, curr, idx) => 
+    (curr.wuHistory?.temp === maxTemp && maxTemp !== null) ? idx : acc, -1);
+    
+  const lastMaxForecastIdx = hourlyReport.reduce((acc, curr, idx) => 
+    (curr.wuForecast?.temp === forecastMax && forecastMax !== null) ? idx : acc, -1);
+
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700 pb-20!">
       <header className="flex items-center justify-between">
@@ -365,7 +372,7 @@ export default async function CityDetailPage({
                           return `${standard} (${twentyFourHour} WIB)`;
                         })()}
                       </td>
-                      <td className="p-4 font-bold text-[#3d5516]">
+                      <td className={`p-4 font-bold text-[#3d5516] transition-all ${idx === lastMaxHistoryIdx ? "bg-orange-400/20 ring-1 ring-orange-400/30 rounded-sm" : ""}`}>
                         <div className="flex items-center gap-1">
                           <span>
                             {formatTemp(item.wuHistory?.temp ?? null)}
@@ -397,7 +404,7 @@ export default async function CityDetailPage({
                           )}
                         </div>
                       </td>
-                      <td className="p-4 text-[#3d5516]/70 font-bold bg-[#c8ea8e]/10">
+                      <td className={`p-4 text-[#3d5516]/70 font-bold transition-all ${idx === lastMaxForecastIdx ? "bg-orange-400/30 ring-1 ring-orange-400/40 rounded-sm" : "bg-[#c8ea8e]/10"}`}>
                         <div className="flex items-center gap-1">
                           <span>
                             {formatTemp(item.wuForecast?.temp ?? null)}
