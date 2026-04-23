@@ -158,19 +158,34 @@ export default function ForecastHistoryPopup({
                     </span>
                   </div>
                   {updatedAt && (
-                    <span className="text-[10px] font-medium text-[#3d5516]/40">
-                      Last sync:{" "}
-                      {new Date(updatedAt).toLocaleString("en-US", {
-                        timeZone: timezone,
-                        month: "short",
-                        day: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}{" "}
-                      ({cityName} time)
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      {/* <span className="text-[10px] font-medium text-[#3d5516]/40 leading-tight">
+                        Last sync:{" "}
+                        {new Date(updatedAt).toLocaleString("en-US", {
+                          timeZone: timezone,
+                          month: "short",
+                          day: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}{" "}
+                        ({cityName})
+                      </span> */}
+                      <span className="text-[10px] font-medium text-[#3d5516]/40 leading-tight">
+                        Last sync:{" "}
+                        {new Date(updatedAt).toLocaleString("en-US", {
+                          timeZone: "Asia/Jakarta",
+                          month: "short",
+                          day: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}{" "}
+                        (WIB)
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -194,19 +209,34 @@ export default function ForecastHistoryPopup({
                             {item.condition}
                           </span>
                         </div>
-                        <span className="text-[10px] font-medium text-[#3d5516]/30">
-                          Last sync:{" "}
-                          {new Date(item.updated_at).toLocaleString("en-US", {
-                            timeZone: timezone,
-                            month: "short",
-                            day: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })}{" "}
-                          ({cityName} time)
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          {/* <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
+                            Last sync:{" "}
+                            {new Date(item.updated_at).toLocaleString("en-US", {
+                              timeZone: timezone,
+                              month: "short",
+                              day: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}{" "}
+                            ({cityName})
+                          </span> */}
+                          <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
+                            Last sync:{" "}
+                            {new Date(item.updated_at).toLocaleString("en-US", {
+                              timeZone: "Asia/Jakarta",
+                              month: "short",
+                              day: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}{" "}
+                            (WIB)
+                          </span>
+                        </div>
                       </div>
                     ))}
                 </div>
