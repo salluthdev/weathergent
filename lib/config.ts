@@ -7,6 +7,7 @@ export interface CityConfig {
   polySlug: string;
   lat: number;
   lon: number;
+  preferredUnit: "C" | "F";
 }
 
 export const CITIES: CityConfig[] = [
@@ -19,6 +20,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "nyc",
     lat: 40.7769,
     lon: -73.8740,
+    preferredUnit: "F",
   },
   {
     slug: "chicago",
@@ -29,6 +31,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "chicago",
     lat: 41.9742,
     lon: -87.9073,
+    preferredUnit: "F",
   },
   {
     slug: "seattle",
@@ -39,6 +42,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "seattle",
     lat: 47.4502,
     lon: -122.3088,
+    preferredUnit: "F",
   },
   {
     slug: "san-francisco",
@@ -49,6 +53,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "san-francisco",
     lat: 37.6213,
     lon: -122.3790,
+    preferredUnit: "F",
   },
   {
     slug: "london",
@@ -59,6 +64,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "london",
     lat: 51.5053,
     lon: 0.0553,
+    preferredUnit: "C",
   },
   {
     slug: "seoul",
@@ -69,6 +75,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "seoul",
     lat: 37.4602,
     lon: 126.4407,
+    preferredUnit: "C",
   },
   {
     slug: "buenos-aires",
@@ -79,6 +86,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "buenos-aires",
     lat: -34.8222,
     lon: -58.5358,
+    preferredUnit: "C",
   },
   {
     slug: "singapore",
@@ -89,6 +97,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "singapore",
     lat: 1.3644,
     lon: 103.9915,
+    preferredUnit: "C",
   },
   {
     slug: "austin",
@@ -99,6 +108,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "austin",
     lat: 30.1945,
     lon: -97.6699,
+    preferredUnit: "F",
   },
   {
     slug: "shanghai",
@@ -109,6 +119,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "shanghai",
     lat: 31.1433,
     lon: 121.8053,
+    preferredUnit: "C",
   },
   {
     slug: "tokyo",
@@ -119,6 +130,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "tokyo",
     lat: 35.5497,
     lon: 139.7870,
+    preferredUnit: "C",
   },
   {
     slug: "mexico-city",
@@ -129,6 +141,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "mexico-city",
     lat: 19.4361,
     lon: -99.0719,
+    preferredUnit: "C",
   },
   {
     slug: "shenzhen",
@@ -139,6 +152,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "shenzhen",
     lat: 22.6395,
     lon: 113.8033,
+    preferredUnit: "C",
   },
   {
     slug: "wellington",
@@ -149,6 +163,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "wellington",
     lat: -41.3268,
     lon: 174.8069,
+    preferredUnit: "C",
   },
   {
     slug: "toronto",
@@ -159,6 +174,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "toronto",
     lat: 43.6772,
     lon: -79.6306,
+    preferredUnit: "C",
   },
   {
     slug: "milan",
@@ -169,6 +185,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "milan",
     lat: 45.6306,
     lon: 8.7281,
+    preferredUnit: "C",
   },
   {
     slug: "dallas",
@@ -179,6 +196,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "dallas",
     lat: 32.8459,
     lon: -96.8509,
+    preferredUnit: "F",
   },
   {
     slug: "lucknow",
@@ -189,6 +207,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "lucknow",
     lat: 26.7606,
     lon: 80.8903,
+    preferredUnit: "C",
   },
   {
     slug: "beijing",
@@ -199,6 +218,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "beijing",
     lat: 40.0773,
     lon: 116.5967,
+    preferredUnit: "C",
   },
   {
     slug: "ankara",
@@ -209,6 +229,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "ankara",
     lat: 40.1281,
     lon: 32.9950,
+    preferredUnit: "C",
   },
   {
     slug: "madrid",
@@ -219,6 +240,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "madrid",
     lat: 40.4933,
     lon: -3.5681,
+    preferredUnit: "C",
   },
   {
     slug: "taipei",
@@ -229,6 +251,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "taipei",
     lat: 25.0697,
     lon: 121.5525,
+    preferredUnit: "C",
   },
   {
     slug: "paris",
@@ -239,6 +262,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "paris",
     lat: 48.9697,
     lon: 2.4417,
+    preferredUnit: "C",
   },
   {
     slug: "munich",
@@ -249,6 +273,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "munich",
     lat: 48.3536,
     lon: 11.7861,
+    preferredUnit: "C",
   },
   {
     slug: "miami",
@@ -259,6 +284,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "miami",
     lat: 25.7954,
     lon: -80.2901,
+    preferredUnit: "F",
   },
   {
     slug: "houston",
@@ -269,6 +295,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "houston",
     lat: 29.6458,
     lon: -95.2772,
+    preferredUnit: "F",
   },
   {
     slug: "atlanta",
@@ -279,6 +306,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "atlanta",
     lat: 33.6367,
     lon: -84.4281,
+    preferredUnit: "F",
   },
   {
     slug: "denver",
@@ -289,6 +317,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "denver",
     lat: 39.7018,
     lon: -104.7520,
+    preferredUnit: "F",
   },
   {
     slug: "los-angeles",
@@ -299,6 +328,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "los-angeles",
     lat: 33.9425,
     lon: -118.4081,
+    preferredUnit: "F",
   },
   {
     slug: "chongqing",
@@ -309,6 +339,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "chongqing",
     lat: 29.7123,
     lon: 106.6519,
+    preferredUnit: "C",
   },
   {
     slug: "chengdu",
@@ -319,6 +350,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "chengdu",
     lat: 30.5583,
     lon: 103.9460,
+    preferredUnit: "C",
   },
   {
     slug: "manila",
@@ -329,6 +361,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "manila",
     lat: 14.5086,
     lon: 121.0200,
+    preferredUnit: "C",
   },
   {
     slug: "helsinki",
@@ -339,6 +372,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "helsinki",
     lat: 60.3172,
     lon: 24.9633,
+    preferredUnit: "C",
   },
   {
     slug: "warsaw",
@@ -349,6 +383,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "warsaw",
     lat: 52.1657,
     lon: 20.9671,
+    preferredUnit: "C",
   },
   {
     slug: "guangzhou",
@@ -359,6 +394,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "guangzhou",
     lat: 23.3925,
     lon: 113.2990,
+    preferredUnit: "C",
   },
   {
     slug: "wuhan",
@@ -369,6 +405,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "wuhan",
     lat: 30.7748,
     lon: 114.2137,
+    preferredUnit: "C",
   },
   {
     slug: "cape-town",
@@ -379,6 +416,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "cape-town",
     lat: -33.9694,
     lon: 18.5972,
+    preferredUnit: "C",
   },
   {
     slug: "amsterdam",
@@ -389,6 +427,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "amsterdam",
     lat: 52.3086,
     lon: 4.7639,
+    preferredUnit: "C",
   },
   {
     slug: "lagos",
@@ -399,6 +438,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "lagos",
     lat: 6.5774,
     lon: 3.3212,
+    preferredUnit: "C",
   },
   {
     slug: "panama",
@@ -409,6 +449,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "panama-city",
     lat: 8.9733,
     lon: -79.5550,
+    preferredUnit: "C",
   },
   {
     slug: "jeddah",
@@ -419,6 +460,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "jeddah",
     lat: 21.6802,
     lon: 39.1574,
+    preferredUnit: "C",
   },
   {
     slug: "busan",
@@ -429,6 +471,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "busan",
     lat: 35.1795,
     lon: 128.9380,
+    preferredUnit: "C",
   },
   {
     slug: "sao-paulo",
@@ -439,6 +482,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "sao-paulo",
     lat: -23.4313,
     lon: -46.4700,
+    preferredUnit: "C",
   },
   {
     slug: "karachi",
@@ -449,6 +493,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "karachi",
     lat: 24.9065,
     lon: 67.1608,
+    preferredUnit: "C",
   },
   {
     slug: "jakarta",
@@ -459,6 +504,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "jakarta",
     lat: -6.2670,
     lon: 106.8903,
+    preferredUnit: "C",
   },
   {
     slug: "kuala-lumpur",
@@ -469,6 +515,7 @@ export const CITIES: CityConfig[] = [
     polySlug: "kuala-lumpur",
     lat: 2.7456,
     lon: 101.7100,
+    preferredUnit: "C",
   },
 ];
 

@@ -172,6 +172,11 @@ export default async function CityDetailPage({
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
+  const formatTemp = (c: number | null) => {
+    if (c === null) return "-";
+    return cityData.preferredUnit === "F" ? `${toF(c)}°F` : `${c}°C`;
+  };
+
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700 pb-20!">
       <header className="flex items-center justify-between">
@@ -233,7 +238,7 @@ export default async function CityDetailPage({
                   Max History (WU)
                 </p>
                 <p className="text-lg font-bold">
-                  {maxTemp !== null ? `${maxTemp}°C / ${toF(maxTemp)}°F` : "-"}
+                  {formatTemp(maxTemp)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-white/60">
@@ -241,7 +246,7 @@ export default async function CityDetailPage({
                   Min History (WU)
                 </p>
                 <p className="text-lg font-bold">
-                  {minTemp !== null ? `${minTemp}°C / ${toF(minTemp)}°F` : "-"}
+                  {formatTemp(minTemp)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
@@ -249,9 +254,7 @@ export default async function CityDetailPage({
                   Max Forecast (WU)
                 </p>
                 <p className="text-lg font-bold">
-                  {forecastMax !== null
-                    ? `${forecastMax}°C / ${toF(forecastMax)}°F`
-                    : "-"}
+                  {formatTemp(forecastMax)}
                 </p>
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
@@ -259,9 +262,7 @@ export default async function CityDetailPage({
                   Min Forecast (WU)
                 </p>
                 <p className="text-lg font-bold">
-                  {forecastMin !== null
-                    ? `${forecastMin}°C / ${toF(forecastMin)}°F`
-                    : "-"}
+                  {formatTemp(forecastMin)}
                 </p>
               </div>
             </div>
@@ -277,7 +278,7 @@ export default async function CityDetailPage({
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-[#3d5516]"></span>
               <span className="text-xs font-medium text-[#3d5516]/60">
-                Celsius
+                {cityData.preferredUnit === "F" ? "Fahrenheit" : "Celsius"}
               </span>
             </div>
           </div>
@@ -379,7 +380,7 @@ export default async function CityDetailPage({
                       strokeWidth="2"
                       className="hover:r-6 transition-all cursor-pointer"
                     >
-                      <title>{`${new Date(obs.valid_time_gmt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: cityData.timezone })}: ${obs.temp}°C`}</title>
+                      <title>{`${new Date(obs.valid_time_gmt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: cityData.timezone })}: ${formatTemp(obs.temp)}`}</title>
                     </circle>
                   );
                 })}
@@ -458,9 +459,7 @@ export default async function CityDetailPage({
                       <td className="p-4 font-bold text-[#3d5516]">
                         <div className="flex items-center gap-1">
                           <span>
-                            {item.wuHistory
-                              ? `${item.wuHistory.temp}°C / ${toF(item.wuHistory.temp)}°F`
-                              : "-"}
+                            {formatTemp(item.wuHistory?.temp ?? null)}
                           </span>
                           {item.wuHistory && (
                             <ObservationDetailPopup 
@@ -468,6 +467,7 @@ export default async function CityDetailPage({
                               exactTime={item.wuExactTime}
                               syncedAt={item.wuSyncedAt}
                               source="WU"
+                              preferredUnit={cityData.preferredUnit}
                             />
                           )}
                         </div>
@@ -475,9 +475,7 @@ export default async function CityDetailPage({
                       <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
                         <div className="flex items-center gap-1">
                           <span>
-                            {item.aviationHistory
-                              ? `${item.aviationHistory.temp}°C / ${toF(item.aviationHistory.temp)}°F`
-                              : "-"}
+                            {formatTemp(item.aviationHistory?.temp ?? null)}
                           </span>
                           {item.aviationHistory && (
                             <ObservationDetailPopup 
@@ -485,6 +483,7 @@ export default async function CityDetailPage({
                               exactTime={item.aviationExactTime}
                               syncedAt={item.aviationSyncedAt}
                               source="Aviation"
+                              preferredUnit={cityData.preferredUnit}
                             />
                           )}
                         </div>
@@ -492,9 +491,7 @@ export default async function CityDetailPage({
                       <td className="p-4 text-[#3d5516]/70 font-bold bg-[#c8ea8e]/10">
                         <div className="flex items-center gap-1">
                           <span>
-                            {item.wuForecast
-                              ? `${item.wuForecast.temp}°C / ${toF(item.wuForecast.temp)}°F`
-                              : "-"}
+                            {formatTemp(item.wuForecast?.temp ?? null)}
                           </span>
                           <ForecastHistoryPopup
                             history={item.forecastHistoryWu}
@@ -502,6 +499,7 @@ export default async function CityDetailPage({
                             updatedAt={item.forecastUpdatedAtWu}
                             timezone={cityData.timezone}
                             cityName={cityData.name}
+                            preferredUnit={cityData.preferredUnit}
                           />
                         </div>
                       </td>

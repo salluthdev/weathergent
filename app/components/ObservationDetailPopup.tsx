@@ -8,6 +8,7 @@ interface ObservationDetailPopupProps {
   syncedAt: string | null;
   source: string;
   temp: number | null;
+  preferredUnit: "C" | "F";
 }
 
 export default function ObservationDetailPopup({
@@ -15,6 +16,7 @@ export default function ObservationDetailPopup({
   syncedAt,
   source,
   temp,
+  preferredUnit,
 }: ObservationDetailPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -125,7 +127,7 @@ export default function ObservationDetailPopup({
               <div className="p-3 rounded-lg bg-[#3d5516]/5 border border-[#3d5516]/10">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-2">Recorded Value</p>
                 <p className="text-lg font-bold text-[#3d5516]">
-                  {temp}°C / {toF(temp)}°F
+                  {preferredUnit === "F" ? `${toF(temp)}°F` : `${temp}°C`}
                 </p>
               </div>
 

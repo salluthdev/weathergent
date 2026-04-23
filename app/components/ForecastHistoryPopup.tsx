@@ -15,6 +15,7 @@ interface ForecastHistoryPopupProps {
   updatedAt: string | null;
   timezone: string;
   cityName: string;
+  preferredUnit: "C" | "F";
 }
 
 export default function ForecastHistoryPopup({
@@ -23,6 +24,7 @@ export default function ForecastHistoryPopup({
   updatedAt,
   timezone,
   cityName,
+  preferredUnit,
 }: ForecastHistoryPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -150,7 +152,7 @@ export default function ForecastHistoryPopup({
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-[#3d5516]">
                       {current
-                        ? `${current.temp}°C / ${toF(current.temp)}°F`
+                        ? (preferredUnit === "F" ? `${toF(current.temp)}°F` : `${current.temp}°C`)
                         : "-"}
                     </span>
                     <span className="text-[10px] font-bold text-[#3d5516]/60">
@@ -203,7 +205,7 @@ export default function ForecastHistoryPopup({
                       <div key={idx} className="pt-2 px-1 flex flex-col gap-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[#3d5516]/70">
-                            {item.temp}°C / {toF(item.temp)}°F
+                            {preferredUnit === "F" ? `${toF(item.temp)}°F` : `${item.temp}°C`}
                           </span>
                           <span className="text-[10px] font-bold text-[#3d5516]/40">
                             {item.condition}

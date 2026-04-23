@@ -22,23 +22,55 @@ function getDynamicPolymarketUrl(polySlug: string, timezone: string) {
 }
 
 function CityDateTime({ timezone }: { timezone: string }) {
-  const [dateTime, setDateTime] = useState({ time: "", date: "" });
+  const [data, setData] = useState({
+    time: "",
+    date: "",
+    countdown: "",
+    timeOfDay: "",
+  });
 
   useEffect(() => {
     const update = () => {
       const now = new Date();
-      setDateTime({
-        time: now.toLocaleTimeString("en-US", {
-          timeZone: timezone,
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        date: now.toLocaleDateString("en-US", {
-          timeZone: timezone,
-          month: "short",
-          day: "numeric",
-        }),
+
+      // Get local time string
+      const timeStr = now.toLocaleTimeString("en-US", {
+        timeZone: timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      // Get local date string
+      const dateStr = now.toLocaleDateString("en-US", {
+        timeZone: timezone,
+        month: "short",
+        day: "numeric",
+      });
+
+      // Calculate countdown to midnight
+      const localNow = new Date(
+        now.toLocaleString("en-US", { timeZone: timezone }),
+      );
+      const midnight = new Date(localNow);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - localNow.getTime();
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const countdownStr = `${hours}h ${minutes}m`;
+
+      // Determine Time of Day (Simplified to 3)
+      const hour24 = localNow.getHours();
+      let tod = "night";
+      if (hour24 >= 6 && hour24 < 17) tod = "morning";
+      else if (hour24 >= 17 && hour24 < 21) tod = "evening";
+
+      setData({
+        time: timeStr,
+        date: dateStr,
+        countdown: countdownStr,
+        timeOfDay: tod,
       });
     };
     update();
@@ -46,14 +78,38 @@ function CityDateTime({ timezone }: { timezone: string }) {
     return () => clearInterval(interval);
   }, [timezone]);
 
+  const isNight = data.timeOfDay === "night";
+
   return (
-    <div className="flex flex-col items-end leading-none">
-      <span className="text-[10px] font-black text-[#3d5516] opacity-30">
-        {dateTime.time}
-      </span>
-      <span className="text-[9px] font-bold text-[#3d5516] opacity-20 uppercase tracking-tight mt-0.5">
-        {dateTime.date}
-      </span>
+    <div className="flex flex-col items-end leading-none gap-1">
+      <div
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${isNight ? "bg-white/10" : "bg-black/5"}`}
+      >
+        <span
+          className={`text-[10px] font-black text-right ${isNight ? "text-[#c8ea8e]" : "text-[#3d5516] opacity-60"}`}
+        >
+          {data.time}
+        </span>
+        <span className="text-[10px]" title={data.timeOfDay}>
+          {data.timeOfDay === "morning"
+            ? "☀️"
+            : data.timeOfDay === "evening"
+              ? "🌅"
+              : "🌙"}
+        </span>
+      </div>
+      <div className="flex flex-col items-end">
+        <span
+          className={`text-[9px] font-black uppercase text-right tracking-tighter ${isNight ? "text-[#c8ea8e]/80" : "text-red-600/60"}`}
+        >
+          Ends in: {data.countdown}
+        </span>
+        <span
+          className={`text-[9px] font-bold uppercase tracking-tight mt-0.5 ${isNight ? "text-[#c8ea8e]/30" : "text-[#3d5516] opacity-20"}`}
+        >
+          {data.date}
+        </span>
+      </div>
     </div>
   );
 }
@@ -62,25 +118,49 @@ export default function Home() {
   const [search, setSearch] = useState("");
 
   const filteredCities = useMemo(() => {
-    return CITIES.filter(
+    const list = CITIES.filter(
       (city) =>
         city.name.toLowerCase().includes(search.toLowerCase()) ||
         city.icao.toLowerCase().includes(search.toLowerCase()),
     );
+
+    // Sort by current local time descending (almost end of day first)
+    return [...list].sort((a, b) => {
+      const getOffset = (tz: string) => {
+        const now = new Date();
+        const local = new Date(now.toLocaleString("en-US", { timeZone: tz }));
+        const utc = new Date(now.toLocaleString("en-US", { timeZone: "UTC" }));
+        return local.getTime() - utc.getTime();
+      };
+      return getOffset(b.timezone) - getOffset(a.timezone);
+    });
   }, [search]);
 
   const groupedCities = useMemo(() => {
     const groups: Record<string, typeof CITIES> = {};
+
     filteredCities.forEach((city) => {
-      let region = city.timezone.split("/")[0] || "Other";
-      // Clean up common region names
-      if (region === "America") region = "Americas";
-      if (!groups[region]) groups[region] = [];
-      groups[region].push(city);
+      const now = new Date();
+      const local = new Date(
+        now.toLocaleString("en-US", { timeZone: city.timezone }),
+      );
+      const utc = new Date(now.toLocaleString("en-US", { timeZone: "UTC" }));
+      const offsetHours = Math.round(
+        (local.getTime() - utc.getTime()) / (1000 * 60 * 60),
+      );
+      const offsetKey =
+        offsetHours >= 0 ? `UTC+${offsetHours}` : `UTC${offsetHours}`;
+
+      if (!groups[offsetKey]) groups[offsetKey] = [];
+      groups[offsetKey].push(city);
     });
-    // Sort regions alphabetically
+
+    // Sort groups so that the earliest ending timezones (UTC+14 etc) come first
     return Object.keys(groups)
-      .sort()
+      .sort((a, b) => {
+        const parseOffset = (key: string) => parseInt(key.replace("UTC", ""));
+        return parseOffset(b) - parseOffset(a);
+      })
       .reduce(
         (acc, key) => {
           acc[key] = groups[key];
@@ -98,7 +178,7 @@ export default function Home() {
             WEATHERGENT
           </h1>
           <div className="text-sm font-bold text-[#3d5516]/40 uppercase tracking-widest">
-            Settlement Intelligence
+            Timezone Timeline
           </div>
         </div>
 
@@ -129,60 +209,90 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-16 px-4">
-        {Object.entries(groupedCities).map(([region, cities]) => (
-          <div key={region} className="flex flex-col gap-6">
+        {Object.entries(groupedCities).map(([offset, cities]) => (
+          <div key={offset} className="flex flex-col gap-6">
             <div className="flex items-center gap-4">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-[#3d5516] opacity-40">
-                {region}
+                {offset} Group
               </h2>
               <div className="h-px flex-1 bg-[#3d5516]/5" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {cities.map((city) => (
-                <div
-                  key={city.slug}
-                  className="p-6 rounded-2xl bg-white border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(61,85,22,0.1)] hover:border-[#3d5516]/10 transition-all duration-300 flex justify-between items-center gap-6 group"
-                >
-                  <Link
-                    href={`/city/${city.slug}`}
-                    className="flex flex-col flex-1"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-bold text-xl text-[#3d5516] group-hover:text-[#3d5516] transition-colors">
-                        {city.name}
-                      </p>
-                      <CityDateTime timezone={city.timezone} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#c8ea8e]"></span>
-                      <p className="text-xs font-bold text-[#3d5516]/40 uppercase tracking-wider">
-                        {city.station} Station
-                      </p>
-                    </div>
-                  </Link>
+              {cities.map((city) => {
+                // Calculate color class based on time
+                const localNow = new Date(
+                  new Date().toLocaleString("en-US", {
+                    timeZone: city.timezone,
+                  }),
+                );
+                const h = localNow.getHours();
+                let cardStyle = "bg-white border-white";
+                let textStyle = "text-[#3d5516]";
+                let subStyle = "text-[#3d5516]/40";
 
-                  <div className="flex items-center">
+                if (h >= 6 && h < 17) {
+                  cardStyle =
+                    "bg-amber-50/40 border-amber-200/20 shadow-amber-900/5";
+                } else if (h >= 17 && h < 21) {
+                  cardStyle =
+                    "bg-orange-50/50 border-orange-200/30 shadow-orange-900/5";
+                } else {
+                  cardStyle =
+                    "bg-[#1a2c08] border-[#3d5516]/20 shadow-black/20";
+                  textStyle = "text-[#c8ea8e]";
+                  subStyle = "text-[#c8ea8e]/40";
+                }
+
+                return (
+                  <div
+                    key={city.slug}
+                    className={`p-6 rounded-2xl border shadow-sm hover:shadow-md transition-all duration-300 flex justify-between items-center gap-6 group ${cardStyle}`}
+                  >
                     <Link
-                      href={getDynamicPolymarketUrl(
-                        city.polySlug,
-                        city.timezone,
-                      )}
-                      target="_blank"
-                      className="p-3 rounded-xl bg-[#f0f4e8] hover:bg-[#c8ea8e]/40 transition-all duration-300 shadow-sm hover:scale-105 active:scale-95"
-                      title="View on Polymarket"
+                      href={`/city/${city.slug}`}
+                      className="flex flex-col flex-1"
                     >
-                      <Image
-                        src={"/img/polymarket.webp"}
-                        width={24}
-                        height={24}
-                        alt="Polymarket"
-                        className="rounded-sm grayscale hover:grayscale-0 transition-all duration-300"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <p
+                          className={`font-bold text-xl transition-colors ${textStyle}`}
+                        >
+                          {city.name}
+                        </p>
+                        <CityDateTime timezone={city.timezone} />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#c8ea8e]"></span>
+                        <p
+                          className={`text-xs font-bold uppercase tracking-wider ${subStyle}`}
+                        >
+                          {city.station} Station
+                        </p>
+                      </div>
                     </Link>
+
+                    <div className="flex items-center">
+                      <Link
+                        href={getDynamicPolymarketUrl(
+                          city.polySlug,
+                          city.timezone,
+                        )}
+                        target="_blank"
+                        className={`p-3 rounded-xl transition-all duration-300 shadow-sm hover:scale-105 active:scale-95 ${h >= 21 || h < 6 ? "bg-white/10 hover:bg-white/20" : "bg-white/60 hover:bg-white"}`}
+                        title="View on Polymarket"
+                      >
+                        <Image
+                          src={"/img/polymarket.webp"}
+                          width={24}
+                          height={24}
+                          alt="Polymarket"
+                          className={`rounded-sm transition-all duration-300 ${h >= 21 || h < 6 ? "" : "grayscale hover:grayscale-0"}`}
+                        />
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
