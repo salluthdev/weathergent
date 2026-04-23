@@ -72,7 +72,7 @@ export default async function CityDetailPage({
 
   let hourlyReport = dbResult?.hourlyReport || [];
   let baseTime = dbResult?.baseTime || 0;
-  
+
   // Consider it a 'DB hit' only if it has the full 30-min resolution (48 slots)
   // This forces an upgrade for older 24-slot records.
   let isFromDb = !!dbResult && hourlyReport.length >= 48;
@@ -81,30 +81,36 @@ export default async function CityDetailPage({
   if (isFromDb && hourlyReport.length > 0) {
     const fullTimeline = Array.from({ length: 48 }, (_, i) => {
       const slotTimestamp = baseTime + i * 1800;
-      const existing = hourlyReport.find((r: any) => r.timestamp === slotTimestamp);
-      
+      const existing = hourlyReport.find(
+        (r: any) => r.timestamp === slotTimestamp,
+      );
+
       // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
       let inheritedForecast = existing?.wuForecast || null;
       if (!inheritedForecast && i > 0) {
         // Look back up to 2 slots (1 hour) to find a forecast to inherit
-        const prevSlot = hourlyReport.find((r: any) => r.timestamp === slotTimestamp - 1800);
+        const prevSlot = hourlyReport.find(
+          (r: any) => r.timestamp === slotTimestamp - 1800,
+        );
         if (prevSlot?.wuForecast) {
           inheritedForecast = prevSlot.wuForecast;
         }
       }
 
-      return existing || {
-        timestamp: slotTimestamp,
-        wuHistory: null,
-        wuForecast: inheritedForecast,
-        aviationHistory: null,
-        forecastHistoryWu: [],
-        forecastUpdatedAtWu: null,
-        wuExactTime: null,
-        wuSyncedAt: null,
-        aviationExactTime: null,
-        aviationSyncedAt: null,
-      };
+      return (
+        existing || {
+          timestamp: slotTimestamp,
+          wuHistory: null,
+          wuForecast: inheritedForecast,
+          aviationHistory: null,
+          forecastHistoryWu: [],
+          forecastUpdatedAtWu: null,
+          wuExactTime: null,
+          wuSyncedAt: null,
+          aviationExactTime: null,
+          aviationSyncedAt: null,
+        }
+      );
     });
     hourlyReport = fullTimeline;
   }
@@ -183,11 +189,17 @@ export default async function CityDetailPage({
   };
 
   // Find the last occurrence of max values for highlighting
-  const lastMaxHistoryIdx = hourlyReport.reduce((acc, curr, idx) => 
-    (curr.wuHistory?.temp === maxTemp && maxTemp !== null) ? idx : acc, -1);
-    
-  const lastMaxForecastIdx = hourlyReport.reduce((acc, curr, idx) => 
-    (curr.wuForecast?.temp === forecastMax && forecastMax !== null) ? idx : acc, -1);
+  const lastMaxHistoryIdx = hourlyReport.reduce(
+    (acc, curr, idx) =>
+      curr.wuHistory?.temp === maxTemp && maxTemp !== null ? idx : acc,
+    -1,
+  );
+
+  const lastMaxForecastIdx = hourlyReport.reduce(
+    (acc, curr, idx) =>
+      curr.wuForecast?.temp === forecastMax && forecastMax !== null ? idx : acc,
+    -1,
+  );
 
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700 pb-20!">
@@ -229,7 +241,9 @@ export default async function CityDetailPage({
         </div>
         <div className="flex flex-col items-end">
           <div className="px-4 py-2 rounded-xl bg-white/40 border border-white/20 shadow-sm backdrop-blur-sm">
-            <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-widest block leading-none mb-1">Viewing Date</span>
+            <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-widest block leading-none mb-1">
+              Viewing Date
+            </span>
             <span className="text-sm font-bold text-[#3d5516]">
               {(() => {
                 const y = targetDate.slice(0, 4);
@@ -239,7 +253,7 @@ export default async function CityDetailPage({
                   weekday: "long",
                   month: "short",
                   day: "2-digit",
-                  year: "numeric"
+                  year: "numeric",
                 });
               })()}
             </span>
@@ -259,37 +273,29 @@ export default async function CityDetailPage({
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Max History (WU)
                 </p>
-                <p className="text-lg font-bold">
-                  {formatTemp(maxTemp)}
-                </p>
+                <p className="text-lg font-bold">{formatTemp(maxTemp)}</p>
               </div>
               <div className="p-4 rounded-xl bg-white/60">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Min History (WU)
                 </p>
-                <p className="text-lg font-bold">
-                  {formatTemp(minTemp)}
-                </p>
+                <p className="text-lg font-bold">{formatTemp(minTemp)}</p>
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Max Forecast (WU)
                 </p>
-                <p className="text-lg font-bold">
-                  {formatTemp(forecastMax)}
-                </p>
+                <p className="text-lg font-bold">{formatTemp(forecastMax)}</p>
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Min Forecast (WU)
                 </p>
-                <p className="text-lg font-bold">
-                  {formatTemp(forecastMin)}
-                </p>
+                <p className="text-lg font-bold">{formatTemp(forecastMin)}</p>
               </div>
             </div>
           </div>
-          
+
           {/* Calendar Navigator now lives in the sidebar */}
           <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
         </div>
@@ -308,7 +314,7 @@ export default async function CityDetailPage({
             </div>
           </div>
 
-          <TemperatureChart 
+          <TemperatureChart
             data={cityObservations}
             minTemp={minTemp}
             maxTemp={maxTemp}
@@ -355,127 +361,135 @@ export default async function CityDetailPage({
                       <tr
                         key={idx}
                         className={`transition-colors ${
-                          isAnyPeak 
-                            ? "bg-orange-50/50 hover:bg-orange-100/50" 
+                          isAnyPeak
+                            ? "bg-orange-50/50 hover:bg-orange-100/50"
                             : "hover:bg-white/40"
                         }`}
                       >
-                      <td className="p-4 text-[#3d5516] font-medium text-xs">
-                        {new Date(item.timestamp * 1000).toLocaleString(
-                          "en-US",
-                          {
-                            timeZone: cityData.timezone,
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          },
-                        )}
-                      </td>
-                      <td className="p-4 text-[#3d5516]/60 text-xs">
-                        {(() => {
-                          const date = new Date(item.timestamp * 1000);
-                          const standard = date.toLocaleString("en-US", {
-                            timeZone: "Asia/Jakarta",
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          });
-                          const twentyFourHour = date.toLocaleString("en-US", {
-                            timeZone: "Asia/Jakarta",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                          });
-                          return `${standard} (${twentyFourHour} WIB)`;
-                        })()}
-                      </td>
-                      <td className={`p-4 font-bold text-[#3d5516] transition-all ${idx === lastMaxHistoryIdx ? "bg-orange-400/20 ring-1 ring-orange-400/30 rounded-sm" : ""}`}>
-                        <div className="flex items-center gap-1">
-                          <span>
-                            {formatTemp(item.wuHistory?.temp ?? null)}
-                          </span>
-                          {item.wuHistory && (
-                            <ObservationDetailPopup 
-                              temp={item.wuHistory.temp}
-                              exactTime={item.wuExactTime}
-                              syncedAt={item.wuSyncedAt}
-                              source="WU"
+                        <td className="p-4 text-[#3d5516] font-medium text-xs">
+                          {new Date(item.timestamp * 1000).toLocaleString(
+                            "en-US",
+                            {
+                              timeZone: cityData.timezone,
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            },
+                          )}
+                        </td>
+                        <td className="p-4 text-[#3d5516]/60 text-xs">
+                          {(() => {
+                            const date = new Date(item.timestamp * 1000);
+                            const standard = date.toLocaleString("en-US", {
+                              timeZone: "Asia/Jakarta",
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            });
+                            const twentyFourHour = date.toLocaleString(
+                              "en-US",
+                              {
+                                timeZone: "Asia/Jakarta",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              },
+                            );
+                            return `${standard} (${twentyFourHour} WIB)`;
+                          })()}
+                        </td>
+                        <td
+                          className={`p-4 font-bold text-[#3d5516] transition-all ${idx === lastMaxHistoryIdx ? "bg-orange-400/20 ring-1 ring-orange-400/30 rounded-sm" : ""}`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {formatTemp(item.wuHistory?.temp ?? null)}
+                            </span>
+                            {item.wuHistory && (
+                              <ObservationDetailPopup
+                                temp={item.wuHistory.temp}
+                                exactTime={item.wuExactTime}
+                                syncedAt={item.wuSyncedAt}
+                                source="WU"
+                                preferredUnit={cityData.preferredUnit}
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {formatTemp(item.aviationHistory?.temp ?? null)}
+                            </span>
+                            {item.aviationHistory && (
+                              <ObservationDetailPopup
+                                temp={item.aviationHistory.temp}
+                                exactTime={item.aviationExactTime}
+                                syncedAt={item.aviationSyncedAt}
+                                source="Aviation"
+                                preferredUnit={cityData.preferredUnit}
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td
+                          className={`p-4 text-[#3d5516]/70 font-bold transition-all ${idx === lastMaxForecastIdx ? "bg-orange-400/30 ring-1 ring-orange-400/40 rounded-sm" : "bg-[#c8ea8e]/10"}`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {formatTemp(item.wuForecast?.temp ?? null)}
+                            </span>
+                            <ForecastHistoryPopup
+                              history={item.forecastHistoryWu}
+                              current={item.wuForecast}
+                              updatedAt={item.forecastUpdatedAtWu}
+                              timezone={cityData.timezone}
+                              cityName={cityData.name}
                               preferredUnit={cityData.preferredUnit}
                             />
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
-                        <div className="flex items-center gap-1">
-                          <span>
-                            {formatTemp(item.aviationHistory?.temp ?? null)}
-                          </span>
-                          {item.aviationHistory && (
-                            <ObservationDetailPopup 
-                              temp={item.aviationHistory.temp}
-                              exactTime={item.aviationExactTime}
-                              syncedAt={item.aviationSyncedAt}
-                              source="Aviation"
-                              preferredUnit={cityData.preferredUnit}
-                            />
-                          )}
-                        </div>
-                      </td>
-                      <td className={`p-4 text-[#3d5516]/70 font-bold transition-all ${idx === lastMaxForecastIdx ? "bg-orange-400/30 ring-1 ring-orange-400/40 rounded-sm" : "bg-[#c8ea8e]/10"}`}>
-                        <div className="flex items-center gap-1">
-                          <span>
-                            {formatTemp(item.wuForecast?.temp ?? null)}
-                          </span>
-                          <ForecastHistoryPopup
-                            history={item.forecastHistoryWu}
-                            current={item.wuForecast}
-                            updatedAt={item.forecastUpdatedAtWu}
-                            timezone={cityData.timezone}
-                            cityName={cityData.name}
-                            preferredUnit={cityData.preferredUnit}
-                          />
-                        </div>
-                      </td>
-                      <td className="p-4 text-[#3d5516]/80 text-sm">
-                        {item.wuHistory?.condition ||
-                          item.wuHistory?.wx_phrase ||
-                          "-"}
-                      </td>
-                      <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
-                        {item.wuForecast?.condition ||
-                          item.wuForecast?.phrase ||
-                          "-"}
-                      </td>
-                      <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
-                        {item.wuHistory && item.aviationHistory
-                          ? (() => {
-                              const diff = (
-                                item.wuHistory.temp - item.aviationHistory.temp
-                              ).toFixed(1);
-                              const prefix = parseFloat(diff) > 0 ? "+" : "";
-                              return `${prefix}${diff}°C`;
-                            })()
-                          : "-"}
-                      </td>
-                      <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
-                        {item.wuHistory && item.wuForecast
-                          ? (() => {
-                              const diff = (
-                                item.wuHistory.temp - item.wuForecast.temp
-                              ).toFixed(1);
-                              const prefix = parseFloat(diff) > 0 ? "+" : "";
-                              return `${prefix}${diff}°C`;
-                            })()
-                          : "-"}
-                      </td>
-                    </tr>
-                  );
-                })
+                          </div>
+                        </td>
+                        <td className="p-4 text-[#3d5516]/80 text-sm">
+                          {item.wuHistory?.condition ||
+                            item.wuHistory?.wx_phrase ||
+                            "-"}
+                        </td>
+                        <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
+                          {item.wuForecast?.condition ||
+                            item.wuForecast?.phrase ||
+                            "-"}
+                        </td>
+                        <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
+                          {item.wuHistory && item.aviationHistory
+                            ? (() => {
+                                const diff = (
+                                  item.wuHistory.temp -
+                                  item.aviationHistory.temp
+                                ).toFixed(1);
+                                const prefix = parseFloat(diff) > 0 ? "+" : "";
+                                return `${prefix}${diff}°C`;
+                              })()
+                            : "-"}
+                        </td>
+                        <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
+                          {item.wuHistory && item.wuForecast
+                            ? (() => {
+                                const diff = (
+                                  item.wuHistory.temp - item.wuForecast.temp
+                                ).toFixed(1);
+                                const prefix = parseFloat(diff) > 0 ? "+" : "";
+                                return `${prefix}${diff}°C`;
+                              })()
+                            : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td
