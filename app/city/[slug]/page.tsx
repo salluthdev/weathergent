@@ -227,22 +227,32 @@ export default async function CityDetailPage({
             )}
           </div>
         </div>
-        <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
+        <div className="flex flex-col items-end">
+          <div className="px-4 py-2 rounded-xl bg-white/40 border border-white/20 shadow-sm backdrop-blur-sm">
+            <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-widest block leading-none mb-1">Viewing Date</span>
+            <span className="text-sm font-bold text-[#3d5516]">
+              {(() => {
+                const y = targetDate.slice(0, 4);
+                const m = parseInt(targetDate.slice(4, 6)) - 1;
+                const d = parseInt(targetDate.slice(6, 8));
+                return new Date(parseInt(y), m, d).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "2-digit",
+                  year: "numeric"
+                });
+              })()}
+            </span>
+          </div>
+        </div>
       </header>
 
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Summary Card */}
+        {/* ... (Summary Card) ... */}
         <div className="lg:col-span-1 flex flex-col gap-6">
           <div className="p-6 rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-4 text-[#3d5516]">
             <h2 className="text-lg font-bold opacity-60 uppercase tracking-tight">
-              {hasData
-                ? new Date(
-                    cityObservations[0].valid_time_gmt * 1000,
-                  ).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    timeZone: cityData.timezone,
-                  })
-                : "Summary"}
+              Summary
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-xl bg-white/60">
@@ -304,6 +314,9 @@ export default async function CityDetailPage({
           />
         </div>
       </main>
+
+      {/* NEW: Permanent Calendar Navigator Section */}
+      <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
 
       <section className="flex flex-col gap-6">
         <h2 className="text-xl font-bold text-[#3d5516]">

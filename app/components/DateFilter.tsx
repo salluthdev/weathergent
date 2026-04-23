@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
 
 interface DateFilterProps {
   initialDate: string;
@@ -12,7 +11,6 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [showCalendar, setShowCalendar] = useState(false);
 
   // Helper to get date string in YYYYMMDD
   const formatDateStr = (date: Date, tz: string) => {
@@ -34,7 +32,6 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     const params = new URLSearchParams(searchParams);
     params.set("date", dateStr);
     router.push(`${pathname}?${params.toString()}`);
-    setShowCalendar(false);
   };
 
   const renderMonth = (monthOffset: number) => {
@@ -47,12 +44,10 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
     const days = [];
-    // Add empty slots for days before the 1st
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-8 w-8" />);
+      days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
     }
 
-    // Add actual days
     for (let d = 1; d <= daysInMonth; d++) {
       const currentMonth = (date.getMonth() + 1).toString().padStart(2, "0");
       const currentDay = d.toString().padStart(2, "0");
@@ -65,11 +60,11 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
         <button
           key={d}
           onClick={() => handleDateSelect(dateStr)}
-          className={`h-8 w-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center
+          className={`h-10 w-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center
             ${isSelected 
-              ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-110" 
+              ? "bg-[#3d5516] text-[#c8ea8e] shadow-lg scale-110 ring-4 ring-[#3d5516]/10 z-10" 
               : isToday
-                ? "bg-[#c8ea8e] text-[#3d5516] ring-2 ring-[#3d5516]/20"
+                ? "bg-[#c8ea8e] text-[#3d5516] ring-2 ring-[#3d5516]/20 hover:bg-[#c8ea8e]/80"
                 : "hover:bg-[#3d5516]/10 text-[#3d5516]/70 hover:text-[#3d5516]"
             }
           `}
@@ -80,13 +75,13 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     }
 
     return (
-      <div className="flex flex-col gap-3 min-w-[180px]">
-        <div className="text-center font-black text-[#3d5516] text-[10px] uppercase tracking-tighter opacity-40">
+      <div className="flex flex-col gap-4 flex-1">
+        <div className="text-center font-black text-[#3d5516] text-xs uppercase tracking-widest opacity-30">
           {monthName} {year}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 place-items-center">
           {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-            <div key={day} className="h-8 w-8 flex items-center justify-center text-[9px] font-black text-[#3d5516]/30">
+            <div key={day} className="h-10 w-10 flex items-center justify-center text-[10px] font-black text-[#3d5516]/20">
               {day}
             </div>
           ))}
@@ -96,74 +91,36 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     );
   };
 
-  // Human readable display for the trigger button
-  const displayDate = (dateStr: string) => {
-    if (!dateStr || dateStr.length !== 8) return "Select Date";
-    const y = dateStr.slice(0, 4);
-    const m = parseInt(dateStr.slice(4, 6)) - 1;
-    const d = parseInt(dateStr.slice(6, 8));
-    return new Date(parseInt(y), m, d).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric"
-    });
-  };
-
   return (
-    <div className="relative">
-      <button
-        onClick={() => setShowCalendar(!showCalendar)}
-        className="flex items-center gap-3 bg-white/40 backdrop-blur-md border border-white/20 p-2 pl-4 pr-3 rounded-xl shadow-sm hover:bg-white/60 transition-all group"
-      >
-        <div className="flex flex-col items-start">
-          <span className="text-[9px] font-black text-[#3d5516]/40 uppercase tracking-widest leading-none mb-1">
-            Data Context
-          </span>
-          <span className="text-sm font-bold text-[#3d5516]">
-            {displayDate(initialDate)}
-          </span>
-        </div>
-        <div className="p-1.5 rounded-lg bg-[#3d5516]/5 text-[#3d5516]/40 group-hover:bg-[#3d5516]/10 group-hover:text-[#3d5516] transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-        </div>
-      </button>
-
-      {showCalendar && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setShowCalendar(false)} 
-          />
-          <div className="absolute right-0 top-full mt-3 z-50 p-6 rounded-2xl bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl flex flex-col md:flex-row gap-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col md:flex-row gap-8">
-                {renderMonth(-1)}
-                {renderMonth(0)}
-              </div>
-              <div className="pt-4 border-t border-[#3d5516]/5 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                   <div className="flex items-center gap-1.5">
-                     <div className="w-2 h-2 rounded-full bg-[#3d5516]" />
-                     <span className="text-[9px] font-bold text-[#3d5516]/40 uppercase">Selected</span>
-                   </div>
-                   <div className="flex items-center gap-1.5">
-                     <div className="w-2 h-2 rounded-full bg-[#c8ea8e]" />
-                     <span className="text-[9px] font-bold text-[#3d5516]/40 uppercase">Today</span>
-                   </div>
-                </div>
-                <button 
-                  onClick={() => handleDateSelect(todayStr)}
-                  className="text-[10px] font-black text-[#3d5516] uppercase hover:underline"
-                >
-                  Back to Today
-                </button>
-              </div>
-            </div>
+    <section className="w-full animate-in slide-in-from-bottom-4 duration-700">
+      <div className="p-8 rounded-3xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl">
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
+            {renderMonth(-1)}
+            {renderMonth(0)}
           </div>
-        </>
-      )}
-    </div>
+          
+          <div className="pt-6 border-t border-[#3d5516]/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-6">
+               <div className="flex items-center gap-2">
+                 <div className="w-3 h-3 rounded-full bg-[#3d5516] shadow-sm" />
+                 <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-wider">Selected Context</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <div className="w-3 h-3 rounded-full bg-[#c8ea8e] shadow-sm" />
+                 <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-wider">Today in {timezone.split('/').pop()?.replace('_', ' ')}</span>
+               </div>
+            </div>
+            
+            <button 
+              onClick={() => handleDateSelect(todayStr)}
+              className="px-4 py-2 rounded-xl bg-[#3d5516]/5 text-[#3d5516] text-xs font-black uppercase tracking-widest hover:bg-[#3d5516]/10 transition-all active:scale-95"
+            >
+              Back to Today
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
