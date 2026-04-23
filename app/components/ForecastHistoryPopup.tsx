@@ -27,9 +27,24 @@ export default function ForecastHistoryPopup({
   preferredUnit,
 }: ForecastHistoryPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseEnter = () => {
+    if (!isPinned) setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (!isPinned) setIsOpen(false);
+  };
+
+  const togglePin = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPinned(!isPinned);
+    setIsOpen(true);
+  };
 
   // Only consider history items that have a different temperature than the current one
   const filteredHistory =
@@ -62,7 +77,7 @@ export default function ForecastHistoryPopup({
   // Handle outside click
   useEffect(() => {
     if (!isOpen) return;
-    const handleClick = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
         popupRef.current &&
         !popupRef.current.contains(e.target as Node) &&
@@ -70,10 +85,11 @@ export default function ForecastHistoryPopup({
         !triggerRef.current.contains(e.target as Node)
       ) {
         setIsOpen(false);
+        setIsPinned(false);
       }
     };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
   if (filteredHistory.length === 0) return null;
@@ -84,9 +100,15 @@ export default function ForecastHistoryPopup({
     <div className="inline-block ml-2">
       <button
         ref={triggerRef}
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-1 rounded-md bg-[#3d5516]/10 hover:bg-[#3d5516]/20 transition-colors text-[#3d5516] flex items-center justify-center"
-        title="View Forecast History"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={togglePin}
+        className={`p-1 rounded-md transition-all flex items-center justify-center ${
+          isPinned || isOpen 
+            ? "bg-[#3d5516] text-[#c8ea8e] shadow-sm" 
+            : "bg-[#3d5516]/10 text-[#3d5516] hover:bg-[#3d5516]/20"
+        }`}
+        title={isPinned ? "Click to Unpin" : "Hover to preview, Click to pin"}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -122,7 +144,10 @@ export default function ForecastHistoryPopup({
                 Forecast Evolution
               </h3>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsPinned(false);
+                }}
                 className="text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
               >
                 <svg
