@@ -3,9 +3,10 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import DateFilter from "@/app/components/DateFilter";
 import { getCityBySlug } from "@/lib/config";
-import { getWeatherFromSupabase } from "@/lib/weather-service";
+import { getWeatherFromSupabase, syncCityData } from "@/lib/weather-service";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
+import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
 
 const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
 
@@ -25,6 +26,13 @@ async function getDailyForecast(icao: string) {
 
 async function getHourlyForecast(icao: string) {
   const url = `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${API_KEY}&icaoCode=${icao}&units=m&language=en-US&format=json`;
+  const res = await fetch(url, { next: { revalidate: 3600 } });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function getAviationHistory(icao: string) {
+  const url = `https://aviationweather.gov/api/data/metar?ids=${icao}&format=json&hours=240`;
   const res = await fetch(url, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
   return res.json();
@@ -66,99 +74,128 @@ export default async function CityDetailPage({
 
   let hourlyReport = dbResult?.hourlyReport || [];
   let baseTime = dbResult?.baseTime || 0;
-  let isFromDb = !!dbResult;
+  
+  // Consider it a 'DB hit' only if it has the full 30-min resolution (48 slots)
+  // This forces an upgrade for older 24-slot records.
+  let isFromDb = !!dbResult && hourlyReport.length >= 48;
 
-  // Fallback to Live API if no database data found
+  // If loading from DB, ensure we have a full 48-slot (30-min) timeline
+  if (isFromDb && hourlyReport.length > 0) {
+    const fullTimeline = Array.from({ length: 48 }, (_, i) => {
+      const slotTimestamp = baseTime + i * 1800;
+      const existing = hourlyReport.find((r: any) => r.timestamp === slotTimestamp);
+      return existing || {
+        timestamp: slotTimestamp,
+        wuHistory: null,
+        wuForecast: null,
+        aviationHistory: null,
+        forecastHistoryWu: [],
+        forecastUpdatedAtWu: null,
+      };
+    });
+    hourlyReport = fullTimeline;
+  }
+
+  // Fallback to Live API if no database data found (or if it needs an upgrade)
   if (!isFromDb) {
-    console.log(`[UI] Falling back to live API for ${cityData.name} on ${targetDate}`);
-    // Fetch Historical, Daily Forecast, and Hourly Forecast in parallel
-    const [historyData, dailyForecast, hourlyForecast] = await Promise.all([
-      getHistoricalWeather(cityData.station, targetDate),
-      getDailyForecast(cityData.icao),
-      getHourlyForecast(cityData.icao),
-    ]);
-
-    const observations = historyData?.observations || [];
-
-    // Calculate baseTime manually if fallback
-    baseTime = (() => {
-      const utcMidnight = Date.UTC(
-        parseInt(targetDate.slice(0, 4)),
-        parseInt(targetDate.slice(4, 6)) - 1,
-        parseInt(targetDate.slice(6, 8))
-      );
-      const localTimeStr = new Date(utcMidnight).toLocaleString("en-US", {
-        timeZone: cityData.timezone,
-        hour12: false,
-      });
-      const [_, time] = localTimeStr.split(", ");
-      const [h, m, s] = time.split(":").map(Number);
-      const offsetSeconds = h * 3600 + m * 60 + s;
-      let diff = offsetSeconds;
-      if (diff > 43200) diff -= 86400;
-      return (utcMidnight - diff * 1000) / 1000;
-    })();
-
-    const cityObservations = observations.filter(
-      (obs: any) => obs.valid_time_gmt >= baseTime && obs.valid_time_gmt < baseTime + 86400
+    console.log(
+      `[UI] Syncing/Upgrading data for ${cityData.name} on ${targetDate}...`,
     );
+    const syncResult = await syncCityData(cityData, targetDate, supabase);
+    if (syncResult.success) {
+      // Re-fetch from DB to get the newly synced/upserted records
+      const updatedDbResult = await getWeatherFromSupabase(cityData, targetDate, supabase);
+      if (updatedDbResult) {
+        hourlyReport = updatedDbResult.hourlyReport;
+        baseTime = updatedDbResult.baseTime;
+        isFromDb = true;
+      }
+    }
+  }
 
-    const getHourlyForecastEntry = (timestamp: number) => {
-      if (!hourlyForecast?.validTimeUtc) return null;
-      const hourIdx = hourlyForecast.validTimeUtc.findIndex(
-        (t: number) => Math.abs(t - timestamp) < 1800
-      );
-      return hourIdx !== -1
-        ? {
-            temp: hourlyForecast.temperature[hourIdx],
-            phrase: hourlyForecast.wxPhraseShort[hourIdx],
-          }
-        : null;
-    };
-
-    hourlyReport = Array.from({ length: 24 }, (_, i) => {
-      const hourTimestamp = baseTime + i * 3600;
-      const historyEntry = cityObservations.find(
-        (obs: any) => Math.abs(obs.valid_time_gmt - hourTimestamp) < 1800
-      );
-      const forecastEntry = getHourlyForecastEntry(hourTimestamp);
-      return { timestamp: hourTimestamp, history: historyEntry, forecast: forecastEntry };
-    }).filter((h) => h.history || h.forecast);
+  // If still no data after sync attempt, we handle it in the UI
+  if (hourlyReport.length === 0) {
+    // This part should technically be redundant if syncCityData works,
+    // but we keep it as a safety measure for the UI layout.
+    hourlyReport = Array.from({ length: 48 }, (_, i) => ({
+      timestamp: baseTime + i * 1800,
+      wuHistory: null,
+      wuForecast: null,
+      aviationHistory: null,
+      forecastHistoryWu: [],
+      forecastUpdatedAtWu: null,
+    }));
   }
 
   // Common UI State Logic (Unified for both DB and API sources)
   const cityObservations = hourlyReport
-    .filter((h: any) => h.history)
-    .map((h: any) => ({ ...h.history, valid_time_gmt: h.timestamp }));
+    .filter((h: any) => h.wuHistory)
+    .map((h: any) => ({ ...h.wuHistory, valid_time_gmt: h.timestamp }));
 
   const hasData = cityObservations.length > 0;
   const temps = cityObservations.map((obs: any) => obs.temp);
-  const maxTemp = hasData ? Math.max(...temps) : null;
-  const minTemp = hasData ? Math.min(...temps) : null;
+  const maxTemp =
+    hourlyReport.length > 0
+      ? Math.max(
+          ...hourlyReport.map((h: any) => h.wuHistory?.temp ?? -Infinity),
+        )
+      : null;
+  const minTemp =
+    hourlyReport.length > 0
+      ? Math.min(...hourlyReport.map((h: any) => h.wuHistory?.temp ?? Infinity))
+      : null;
 
-  const targetDayForecasts = hourlyReport
-    .filter((h: any) => h.forecast)
-    .map((h: any) => h.forecast.temp);
+  const forecastMax =
+    hourlyReport.length > 0
+      ? Math.max(
+          ...hourlyReport.map((h: any) => h.wuForecast?.temp ?? -Infinity),
+        )
+      : null;
+  const forecastMin =
+    hourlyReport.length > 0
+      ? Math.min(
+          ...hourlyReport.map((h: any) => h.wuForecast?.temp ?? Infinity),
+        )
+      : null;
 
-  const forecastMax = targetDayForecasts.length > 0 ? Math.max(...targetDayForecasts) : null;
-  const forecastMin = targetDayForecasts.length > 0 ? Math.min(...targetDayForecasts) : null;
-
-  const toF = (c: number) => Math.round((c * 9) / 5 + 32);
+  const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
   return (
-    <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700">
+    <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700 pb-20!">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="p-2 rounded-full bg-white/50 group-hover:bg-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
             </div>
-            <span className="font-medium text-[#3d5516]/80 group-hover:text-[#3d5516]">Back</span>
+            <span className="font-medium text-[#3d5516]/80 group-hover:text-[#3d5516]">
+              Back
+            </span>
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold text-[#3d5516]">{cityData.name}</h1>
-            <div className="px-3 py-1 rounded-full bg-[#3d5516] text-[#c8ea8e] text-xs font-bold uppercase tracking-widest">{cityData.icao}</div>
-            {isFromDb && <span className="text-[10px] font-black text-[#3d5516]/30 uppercase bg-white/40 px-2 py-0.5 rounded border border-black/5">Verified Record</span>}
+            <h1 className="text-3xl font-bold text-[#3d5516]">
+              {cityData.name}
+            </h1>
+            <div className="px-3 py-1 rounded-full bg-[#3d5516] text-[#c8ea8e] text-xs font-bold uppercase tracking-widest">
+              {cityData.icao}
+            </div>
+            {isFromDb && (
+              <span className="text-[10px] font-black text-[#3d5516]/30 uppercase bg-white/40 px-2 py-0.5 rounded border border-black/5">
+                Verified Record
+              </span>
+            )}
           </div>
         </div>
         <DateFilter initialDate={targetDate} />
@@ -181,7 +218,7 @@ export default async function CityDetailPage({
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-xl bg-white/60">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Max History
+                  Max History (WU)
                 </p>
                 <p className="text-lg font-bold">
                   {maxTemp !== null ? `${maxTemp}°C / ${toF(maxTemp)}°F` : "-"}
@@ -189,7 +226,7 @@ export default async function CityDetailPage({
               </div>
               <div className="p-4 rounded-xl bg-white/60">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Min History
+                  Min History (WU)
                 </p>
                 <p className="text-lg font-bold">
                   {minTemp !== null ? `${minTemp}°C / ${toF(minTemp)}°F` : "-"}
@@ -197,7 +234,7 @@ export default async function CityDetailPage({
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Max Forecast
+                  Max Forecast (WU)
                 </p>
                 <p className="text-lg font-bold">
                   {forecastMax !== null
@@ -207,7 +244,7 @@ export default async function CityDetailPage({
               </div>
               <div className="p-4 rounded-xl bg-[#c8ea8e] shadow-sm">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
-                  Min Forecast
+                  Min Forecast (WU)
                 </p>
                 <p className="text-lg font-bold">
                   {forecastMin !== null
@@ -350,10 +387,19 @@ export default async function CityDetailPage({
                 <tr className="bg-[#3d5516] text-[#c8ea8e]">
                   <th className="p-4 font-semibold">City Time</th>
                   <th className="p-4 font-semibold">WIB Time</th>
-                  <th className="p-4 font-semibold">Temp. History</th>
-                  <th className="p-4 font-semibold">Temp. Forecast</th>
-                  <th className="p-4 font-semibold">Condition History</th>
-                  <th className="p-4 font-semibold">Condition Forecast</th>
+                  <th className="p-4 font-semibold">Temp. History (WU)</th>
+                  <th className="p-4 font-semibold">
+                    Temp. History (Aviation)
+                  </th>
+                  <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
+                  <th className="p-4 font-semibold">Condition History (WU)</th>
+                  <th className="p-4 font-semibold">Condition Forecast (WU)</th>
+                  <th className="p-4 font-semibold text-orange-200 text-right">
+                    WU History vs Aviation History
+                  </th>
+                  <th className="p-4 font-semibold text-orange-200 text-right">
+                    WU History vs WU Forecast
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#3d5516]/10">
@@ -398,27 +444,69 @@ export default async function CityDetailPage({
                         })()}
                       </td>
                       <td className="p-4 font-bold text-[#3d5516]">
-                        {item.history
-                          ? `${item.history.temp}°C / ${toF(item.history.temp)}°F`
+                        {item.wuHistory
+                          ? `${item.wuHistory.temp}°C / ${toF(item.wuHistory.temp)}°F`
+                          : "-"}
+                      </td>
+                      <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
+                        {item.aviationHistory
+                          ? `${item.aviationHistory.temp}°C / ${toF(item.aviationHistory.temp)}°F`
                           : "-"}
                       </td>
                       <td className="p-4 text-[#3d5516]/70 font-bold bg-[#c8ea8e]/10">
-                        {item.forecast
-                          ? `${item.forecast.temp}°C / ${toF(item.forecast.temp)}°F`
-                          : "-"}
+                        <div className="flex items-center gap-1">
+                          <span>
+                            {item.wuForecast
+                              ? `${item.wuForecast.temp}°C / ${toF(item.wuForecast.temp)}°F`
+                              : "-"}
+                          </span>
+                          <ForecastHistoryPopup
+                            history={item.forecastHistoryWu}
+                            current={item.wuForecast}
+                            updatedAt={item.forecastUpdatedAtWu}
+                            timezone={cityData.timezone}
+                            cityName={cityData.name}
+                          />
+                        </div>
                       </td>
                       <td className="p-4 text-[#3d5516]/80 text-sm">
-                        {item.history?.wx_phrase || "-"}
+                        {item.wuHistory?.condition ||
+                          item.wuHistory?.wx_phrase ||
+                          "-"}
                       </td>
-                      <td className="p-4 text-[#3d5516]/80 text-sm bg-[#c8ea8e]/5">
-                        {item.forecast?.phrase || "-"}
+                      <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
+                        {item.wuForecast?.condition ||
+                          item.wuForecast?.phrase ||
+                          "-"}
+                      </td>
+                      <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
+                        {item.wuHistory && item.aviationHistory
+                          ? (() => {
+                              const diff = (
+                                item.wuHistory.temp - item.aviationHistory.temp
+                              ).toFixed(1);
+                              const prefix = parseFloat(diff) > 0 ? "+" : "";
+                              return `${prefix}${diff}°C`;
+                            })()
+                          : "-"}
+                      </td>
+                      <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
+                        {item.wuHistory && item.wuForecast
+                          ? (() => {
+                              const diff = (
+                                item.wuHistory.temp - item.wuForecast.temp
+                              ).toFixed(1);
+                              const prefix = parseFloat(diff) > 0 ? "+" : "";
+                              return `${prefix}${diff}°C`;
+                            })()
+                          : "-"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={9}
                       className="p-12 text-center text-[#3d5516]/40 italic font-medium"
                     >
                       No historical or forecast data found for this date.

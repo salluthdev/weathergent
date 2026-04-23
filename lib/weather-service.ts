@@ -4,28 +4,36 @@ const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
 
 export interface HourlyReportItem {
   timestamp: number;
-  history?: any;
-  forecast?: any;
+  wuHistory?: any;
+  wuForecast?: any;
+  aviationHistory?: any;
+  forecastHistoryWu?: any[];
+  forecastUpdatedAtWu?: string | null;
+  diff_wu_history_aviation_history?: number | null;
+  diff_wu_history_wu_forecast?: number | null;
 }
 
-const toF = (c: number) => Math.round((c * 9) / 5 + 32);
+const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
 export async function syncCityData(city: CityConfig, targetDate: string, supabase: any) {
   console.log(`[Sync] Starting sync for ${city.name} (${targetDate})...`);
 
   try {
-    // Fetch Historical, Daily Forecast, and Hourly Forecast in parallel
-    const [historyRes, hourlyRes] = await Promise.all([
+    const [historyRes, hourlyRes, metarRes] = await Promise.all([
       fetch(
         `https://api.weather.com/v1/location/${city.station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${targetDate}&endDate=${targetDate}`
       ),
       fetch(
         `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`
       ),
+      fetch(
+        `https://aviationweather.gov/api/data/metar?ids=${city.icao}&format=json&hours=240`
+      ),
     ]);
 
     const historyData = await historyRes.json();
     const hourlyForecast = await hourlyRes.json();
+    const metarData = await metarRes.json();
 
     // 1. Fetch existing records from Supabase to prevent overwriting with nulls
     const dbResult = await getWeatherFromSupabase(city, targetDate, supabase);
@@ -45,45 +53,89 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
       new Date(year, month, day).getTime() - cityLocalMidnight.getTime();
     const baseTime = Math.floor((new Date(year, month, day).getTime() + offset) / 1000);
 
-    const hours = Array.from({ length: 24 }, (_, i) => baseTime + i * 3600);
+    const hours = Array.from({ length: 48 }, (_, i) => baseTime + i * 1800);
 
     const hourlyReport: HourlyReportItem[] = hours.map((timestamp) => {
-      // Find existing data for this hour if any
-      const existing = existingRecords.find(r => r.timestamp === timestamp);
+      // Find existing data for this slot if any
+      const existing = existingRecords.find((r: any) => r.timestamp === timestamp);
 
       // New API data for history
-      const history = historyData.observations?.find((obs: any) => {
+      const historyMatches = (historyData.observations || []).filter((obs: any) => {
         const obsTime = obs.valid_time_gmt;
-        return Math.abs(obsTime - timestamp) < 1800;
+        return Math.abs(obsTime - timestamp) <= 900;
       });
+      // Peak Match: Always select the highest temperature in the window
+      const history = historyMatches.length > 0 
+        ? historyMatches.reduce((max: any, obs: any) => (obs.temp > (max.temp ?? -Infinity) ? obs : max))
+        : null;
 
       // New API data for forecast
       const forecastIndex = hourlyForecast.validTimeUtc?.findIndex(
-        (t: number) => Math.abs(t - timestamp) < 1800
+        (t: number) => Math.abs(t - timestamp) < 900
       );
 
       let forecast = null;
       if (forecastIndex !== undefined && forecastIndex !== -1) {
         forecast = {
           temp: hourlyForecast.temperature[forecastIndex],
-          phrase: hourlyForecast.wxPhraseShort[forecastIndex],
+          condition: hourlyForecast.wxPhraseShort[forecastIndex],
         };
       }
 
-      // SMART MERGE: Keep existing data if API is null
+      // New API data for Aviation History (METAR)
+      const aviationHistoryMatches = metarData?.filter((obs: any) => {
+        const reportTimestamp = Math.floor(new Date(obs.reportTime).getTime() / 1000);
+        return Math.abs(reportTimestamp - timestamp) <= 900;
+      });
+      // Peak Match: Always select the highest temperature in the window
+      const aviationHistory = (aviationHistoryMatches?.length || 0) > 0
+        ? aviationHistoryMatches.reduce((max: any, obs: any) => (obs.temp > (max.temp ?? -Infinity) ? obs : max))
+        : null;
+
+      // Forecast History Tracking
+      let forecastHistoryWu = existing?.forecastHistoryWu || [];
+      let forecastUpdatedAtWu = existing?.forecastUpdatedAtWu || null;
+
+      if (forecast) {
+        if (existing?.wuForecast) {
+          const oldTemp = Number(existing.wuForecast.temp);
+          const newTemp = Number(forecast.temp);
+          const isChanged = oldTemp !== newTemp;
+          
+          if (isChanged) {
+            console.log(`[Sync] Temperature forecast change detected for ${city.name} at ${timestamp}: ${oldTemp}°C -> ${newTemp}°C`);
+            forecastHistoryWu = [
+              ...forecastHistoryWu,
+              {
+                temp: existing.wuForecast.temp,
+                condition: existing.wuForecast.condition,
+                updated_at: existing.forecastUpdatedAtWu || new Date(Date.now() - 3600000).toISOString()
+              }
+            ];
+            forecastUpdatedAtWu = new Date().toISOString();
+          }
+        } else {
+          // First time getting a forecast, use current time
+          forecastUpdatedAtWu = new Date().toISOString();
+        }
+      }
+        // SMART MERGE: Keep existing data if API is null
       return { 
         timestamp, 
-        history: history || existing?.history || null, 
-        forecast: forecast || existing?.forecast || null 
+        wuHistory: history || existing?.wuHistory || null, 
+        wuForecast: forecast || existing?.wuForecast || null,
+        aviationHistory: aviationHistory || existing?.aviationHistory || null,
+        forecastHistoryWu,
+        forecastUpdatedAtWu
       };
-    }).filter(h => h.history || h.forecast);
+    });
 
     if (hourlyReport.length === 0) {
       console.log(`[Sync] No data found for ${city.name} on ${targetDate}.`);
       return { success: true, count: 0 };
     }
 
-    const recordsToUpsert = hourlyReport.map((item) => ({
+    const recordsToUpsert = hourlyReport.map((item: HourlyReportItem) => ({
       city_name: city.slug,
       station_id: city.icao,
       timestamp_gmt: item.timestamp,
@@ -114,12 +166,22 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
         });
         return `${standard} (${twentyFourHour} WIB)`;
       })(),
-      temp_c: item.history?.temp ?? null,
-      temp_f: item.history?.temp !== undefined ? toF(item.history.temp) : null,
-      forecast_c: item.forecast?.temp ?? null,
-      forecast_f: item.forecast?.temp !== undefined ? toF(item.forecast.temp) : null,
-      condition_history: item.history?.wx_phrase ?? null,
-      condition_forecast: item.forecast?.phrase ?? null,
+      temp_c_wu: item.wuHistory?.temp ?? null,
+      temp_f_wu: item.wuHistory?.temp !== undefined ? toF(item.wuHistory.temp) : null,
+      forecast_c_wu: item.wuForecast?.temp ?? null,
+      forecast_f_wu: item.wuForecast?.temp !== undefined ? toF(item.wuForecast.temp) : null,
+      history_c_aviation: item.aviationHistory?.temp ?? null,
+      history_f_aviation: item.aviationHistory?.temp !== undefined ? toF(item.aviationHistory.temp) : null,
+      condition_history_wu: item.wuHistory?.condition ?? item.wuHistory?.wx_phrase ?? null,
+      condition_forecast_wu: item.wuForecast?.condition ?? item.wuForecast?.phrase ?? null,
+      forecast_history_wu: item.forecastHistoryWu,
+      forecast_updated_at_wu: item.forecastUpdatedAtWu,
+      diff_wu_history_aviation_history: (item.wuHistory && item.aviationHistory) 
+        ? parseFloat((item.wuHistory.temp - item.aviationHistory.temp).toFixed(1)) 
+        : null,
+      diff_wu_history_wu_forecast: (item.wuHistory && item.wuForecast) 
+        ? parseFloat((item.wuHistory.temp - item.wuForecast.temp).toFixed(1)) 
+        : null,
     }));
 
     const { error } = await supabase
@@ -170,14 +232,21 @@ export async function getWeatherFromSupabase(city: CityConfig, targetDate: strin
     // Map database records back to the HourlyReportItem format used by the UI
     const hourlyReport = data.map((record: any) => ({
       timestamp: record.timestamp_gmt,
-      history: record.temp_c !== null ? { 
-        temp: record.temp_c, 
-        wx_phrase: record.condition_history 
+      wuHistory: record.temp_c_wu !== null ? { 
+        temp: record.temp_c_wu, 
+        condition: record.condition_history_wu 
       } : null,
-      forecast: record.forecast_c !== null ? { 
-        temp: record.forecast_c, 
-        phrase: record.condition_forecast 
+      wuForecast: record.forecast_c_wu !== null ? { 
+        temp: record.forecast_c_wu, 
+        condition: record.condition_forecast_wu 
       } : null,
+      aviationHistory: record.history_c_aviation !== null ? {
+        temp: record.history_c_aviation
+      } : null,
+      forecastHistoryWu: record.forecast_history_wu || [],
+      forecastUpdatedAtWu: record.forecast_updated_at_wu,
+      diff_wu_history_aviation_history: record.diff_wu_history_aviation_history,
+      diff_wu_history_wu_forecast: record.diff_wu_history_wu_forecast,
     }));
 
     return { hourlyReport, baseTime };

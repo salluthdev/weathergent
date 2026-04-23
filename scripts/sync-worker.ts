@@ -6,7 +6,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error("Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL in .env");
+  console.error(
+    "Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL in .env",
+  );
   process.exit(1);
 }
 
@@ -18,11 +20,11 @@ async function runSync() {
 
   for (const city of CITIES) {
     // Get "today" in the city's timezone
-    const now = new Date().toLocaleString("en-US", { 
+    const now = new Date().toLocaleString("en-US", {
       timeZone: city.timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
     });
     const [m, d, y] = now.split("/");
     const todayStr = `${y}${m}${d}`;
@@ -34,13 +36,18 @@ async function runSync() {
 }
 
 // Main execution loop
-const HOURLY = 60 * 60 * 1000;
-
 console.log("Weathergent Sync Worker started...");
-console.log(`Monitoring ${CITIES.length} cities: ${CITIES.map(c => c.name).join(", ")}`);
+console.log(
+  `Monitoring ${CITIES.length} cities: ${CITIES.map((c) => c.name).join(", ")}`,
+);
 
-// Run immediately on start
-runSync();
-
-// Then run every hour
-setInterval(runSync, HOURLY);
+// Run sync once and exit
+runSync()
+  .then(() => {
+    console.log("Sync completed successfully. Exiting...");
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error("Sync failed:", err);
+    process.exit(1);
+  });
