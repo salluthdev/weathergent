@@ -39,11 +39,11 @@ export default function TemperatureChart({
   };
 
   // Generate Y-axis ticks
-  const yTicks = [0, 1, 2, 3].map(i => {
+  const yTicks = [0, 1, 2, 3].map((i) => {
     const val = chartMax - (i * range) / 3;
     return {
       label: formatTemp(val),
-      y: (i / 3) * 160 + 20
+      y: (i / 3) * 160 + 20,
     };
   });
 
@@ -56,18 +56,18 @@ export default function TemperatureChart({
         timestamp: item.timestamp,
         index: i,
         x: (i / (data.length - 1)) * 1000,
-        y: 180 - ((item.wuHistory.temp - chartMin) / range) * 160
+        y: 180 - ((item.wuHistory.temp - chartMin) / range) * 160,
       };
     })
     .filter((p): p is any => p !== null);
 
   // X-axis ticks (always 24 hours)
-  const xTicks = [0, 6, 12, 18, 23].map(hour => {
+  const xTicks = [0, 6, 12, 18, 23].map((hour) => {
     // 48 slots in total, 2 slots per hour
-    const slotIdx = hour * 2; 
+    const slotIdx = hour * 2;
     return {
-      label: `${hour.toString().padStart(2, '0')}:00`,
-      x: (slotIdx / (data.length - 1)) * 1000
+      label: `${hour.toString().padStart(2, "0")}:00`,
+      x: (slotIdx / (data.length - 1)) * 1000,
     };
   });
 
@@ -75,20 +75,20 @@ export default function TemperatureChart({
     <div className="relative w-full group">
       {/* Tooltip */}
       {hoveredPoint && (
-        <div 
+        <div
           className="absolute z-10 p-2 rounded-lg bg-[#3d5516] text-[#c8ea8e] text-[10px] font-bold shadow-xl pointer-events-none transition-all duration-200"
-          style={{ 
+          style={{
             left: `${(hoveredPoint.index / (data.length - 1)) * 100}%`,
             top: `${hoveredPoint.y - 40}px`,
-            transform: 'translateX(-50%)'
+            transform: "translateX(-50%)",
           }}
         >
           <div className="whitespace-nowrap">
-            {new Date(hoveredPoint.timestamp * 1000).toLocaleTimeString([], { 
-              hour: "2-digit", 
-              minute: "2-digit", 
+            {new Date(hoveredPoint.timestamp * 1000).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
               timeZone: timezone,
-              hour12: false
+              hour12: false,
             })}
           </div>
           <div className="text-sm">{formatTemp(hoveredPoint.item.temp)}</div>
@@ -134,11 +134,11 @@ export default function TemperatureChart({
               {validPoints.length > 0 && (
                 <>
                   <path
-                    d={`M ${validPoints.map(p => `${p.x},${p.y}`).join(" L ")} L ${validPoints[validPoints.length - 1].x},200 L ${validPoints[0].x},200 Z`}
+                    d={`M ${validPoints.map((p) => `${p.x},${p.y}`).join(" L ")} L ${validPoints[validPoints.length - 1].x},200 L ${validPoints[0].x},200 Z`}
                     fill="url(#chartGradient)"
                   />
                   <path
-                    d={`M ${validPoints.map(p => `${p.x},${p.y}`).join(" L ")}`}
+                    d={`M ${validPoints.map((p) => `${p.x},${p.y}`).join(" L ")}`}
                     fill="none"
                     stroke="#3d5516"
                     strokeWidth="3"
@@ -150,7 +150,7 @@ export default function TemperatureChart({
 
               {/* Vertical Indicator on Hover */}
               {hoveredPoint && (
-                <line 
+                <line
                   x1={(hoveredPoint.index / (data.length - 1)) * 1000}
                   y1="0"
                   x2={(hoveredPoint.index / (data.length - 1)) * 1000}
@@ -166,7 +166,7 @@ export default function TemperatureChart({
               {validPoints.map((p, i) => (
                 <rect
                   key={i}
-                  x={p.x - (1000 / data.length / 2)}
+                  x={p.x - 1000 / data.length / 2}
                   y="0"
                   width={1000 / data.length}
                   height="200"
