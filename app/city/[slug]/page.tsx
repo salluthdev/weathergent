@@ -6,6 +6,7 @@ import { getCityBySlug } from "@/lib/config";
 import { getWeatherFromDb, syncCityData } from "@/lib/weather-service";
 import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
 import ObservationDetailPopup from "@/app/components/ObservationDetailPopup";
+import TemperatureChart from "@/app/components/TemperatureChart";
 
 const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
 
@@ -287,109 +288,13 @@ export default async function CityDetailPage({
             </div>
           </div>
 
-          {/* Custom SVG Chart */}
-          <div className="h-64 w-full relative group">
-            <svg
-              viewBox="0 0 1000 200"
-              className="w-full h-full preserve-3d"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3d5516" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#3d5516" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              {/* Grid Lines */}
-              {[0, 1, 2, 3].map((i) => (
-                <line
-                  key={i}
-                  x1="0"
-                  y1={i * 50 + 25}
-                  x2="1000"
-                  y2={i * 50 + 25}
-                  stroke="#3d5516"
-                  strokeOpacity="0.1"
-                  strokeDasharray="4 4"
-                />
-              ))}
-
-              {/* Data Path */}
-              {hasData && (
-                <>
-                  <path
-                    d={`M ${cityObservations
-                      .map((obs: any, i: number) => {
-                        const x =
-                          cityObservations.length > 1
-                            ? (i / (cityObservations.length - 1)) * 1000
-                            : 500;
-                        const y =
-                          180 -
-                          ((obs.temp - (minTemp || 0)) /
-                            ((maxTemp || 1) - (minTemp || 0) || 1)) *
-                            140;
-                        return `${x},${y}`;
-                      })
-                      .join(" L ")} L 1000,200 L 0,200 Z`}
-                    fill="url(#gradient)"
-                    className="opacity-40"
-                  />
-                  <path
-                    d={`M ${cityObservations
-                      .map((obs: any, i: number) => {
-                        const x =
-                          cityObservations.length > 1
-                            ? (i / (cityObservations.length - 1)) * 1000
-                            : 500;
-                        const y =
-                          180 -
-                          ((obs.temp - (minTemp || 0)) /
-                            ((maxTemp || 1) - (minTemp || 0) || 1)) *
-                            140;
-                        return `${x},${y}`;
-                      })
-                      .join(" L ")}`}
-                    fill="none"
-                    stroke="#3d5516"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="drop-shadow-lg"
-                  />
-                </>
-              )}
-
-              {/* Data Points */}
-              {hasData &&
-                cityObservations.map((obs: any, i: number) => {
-                  const x =
-                    cityObservations.length > 1
-                      ? (i / (cityObservations.length - 1)) * 1000
-                      : 500;
-                  const y =
-                    180 -
-                    ((obs.temp - (minTemp || 0)) /
-                      ((maxTemp || 1) - (minTemp || 0) || 1)) *
-                      140;
-                  return (
-                    <circle
-                      key={i}
-                      cx={x}
-                      cy={y}
-                      r="4"
-                      fill="white"
-                      stroke="#3d5516"
-                      strokeWidth="2"
-                      className="hover:r-6 transition-all cursor-pointer"
-                    >
-                      <title>{`${new Date(obs.valid_time_gmt * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: cityData.timezone })}: ${formatTemp(obs.temp)}`}</title>
-                    </circle>
-                  );
-                })}
-            </svg>
-          </div>
+          <TemperatureChart 
+            data={cityObservations}
+            minTemp={minTemp}
+            maxTemp={maxTemp}
+            timezone={cityData.timezone}
+            preferredUnit={cityData.preferredUnit}
+          />
         </div>
       </main>
 
