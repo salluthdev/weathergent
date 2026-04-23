@@ -39,8 +39,10 @@ export default function TemperatureChart({
   const range = chartMax - chartMin || 1;
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
-  const formatTemp = (c: number) => 
-    preferredUnit === "F" ? `${toF(c)}°F` : `${c}°C`;
+  const formatTemp = (c: number) => {
+    const val = preferredUnit === "F" ? toF(c) : parseFloat(c.toFixed(1));
+    return `${val}${preferredUnit === "F" ? "°F" : "°C"}`;
+  };
 
   // Generate Y-axis ticks (4 levels)
   const yTicks = [0, 1, 2, 3].map(i => {
