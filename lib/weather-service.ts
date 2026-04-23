@@ -9,8 +9,10 @@ export interface HourlyReportItem {
   aviationHistory?: any;
   forecastHistoryWu?: any[];
   forecastUpdatedAtWu?: string | null;
-  diff_wu_history_aviation_history?: number | null;
-  diff_wu_history_wu_forecast?: number | null;
+  wuExactTime?: number | null;
+  wuSyncedAt?: string | null;
+  aviationExactTime?: number | null;
+  aviationSyncedAt?: string | null;
 }
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
@@ -84,6 +86,9 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
       let history = historyEntry 
         ? { temp: historyEntry.temp, condition: historyEntry.wx_phrase || historyEntry.phrase_32char } 
         : (existing?.wuHistory || null);
+      
+      let wuExactTime = historyEntry?.valid_time_gmt || existing?.wuExactTime || null;
+      let wuSyncedAt = historyEntry ? new Date().toISOString() : (existing?.wuSyncedAt || null);
 
       // Fallback: If this is a very recent slot (within the last 45 mins) and history is still null,
       // try to use the "Current Conditions" API data.
@@ -95,13 +100,22 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
             temp: currentData.temperature,
             condition: currentData.wxPhraseShort || currentData.wxPhraseMedium
           };
+          wuExactTime = currentData.validTimeUtc;
+          wuSyncedAt = new Date().toISOString();
         }
       }
 
       // New API data for forecast
-      const forecastIndex = hourlyForecast.validTimeUtc?.findIndex(
+      let forecastIndex = hourlyForecast.validTimeUtc?.findIndex(
         (t: number) => Math.abs(t - timestamp) < 1200
       );
+
+      // Fallback: If no exact/near match for 30-min slot, look for the preceding hourly forecast
+      if ((forecastIndex === undefined || forecastIndex === -1) && hourlyForecast.validTimeUtc) {
+        forecastIndex = hourlyForecast.validTimeUtc.findIndex(
+          (t: number) => timestamp - t > 0 && timestamp - t <= 2700 // Up to 45 mins prior
+        );
+      }
 
       let forecast = null;
       if (forecastIndex !== undefined && forecastIndex !== -1) {
@@ -128,6 +142,11 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
       const aviationHistory = aviationEntry 
         ? { temp: aviationEntry.temp } 
         : (existing?.aviationHistory || null);
+      
+      const aviationExactTime = aviationEntry 
+        ? Math.floor(new Date(aviationEntry.reportTime || aviationEntry.obsTime).getTime() / 1000) 
+        : (existing?.aviationExactTime || null);
+      const aviationSyncedAt = aviationEntry ? new Date().toISOString() : (existing?.aviationSyncedAt || null);
 
       // Forecast History Tracking
       let forecastHistoryWu = existing?.forecastHistoryWu || [];
@@ -159,11 +178,15 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
         // SMART MERGE: Keep existing data if API is null
       return { 
         timestamp, 
-        wuHistory: history || existing?.wuHistory || null, 
-        wuForecast: forecast || existing?.wuForecast || null,
-        aviationHistory: aviationHistory || existing?.aviationHistory || null,
+        wuHistory: history, 
+        wuForecast: forecast,
+        aviationHistory: aviationHistory,
         forecastHistoryWu,
-        forecastUpdatedAtWu
+        forecastUpdatedAtWu,
+        wuExactTime,
+        wuSyncedAt,
+        aviationExactTime,
+        aviationSyncedAt
       };
     });
 
@@ -213,6 +236,10 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
       condition_forecast_wu: item.wuForecast?.condition ?? item.wuForecast?.phrase ?? null,
       forecast_history_wu: item.forecastHistoryWu,
       forecast_updated_at_wu: item.forecastUpdatedAtWu,
+      wu_exact_time: item.wuExactTime,
+      wu_synced_at: item.wuSyncedAt,
+      aviation_exact_time: item.aviationExactTime,
+      aviation_synced_at: item.aviationSyncedAt,
       diff_wu_history_aviation_history: (item.wuHistory && item.aviationHistory) 
         ? parseFloat((item.wuHistory.temp - item.aviationHistory.temp).toFixed(1)) 
         : null,
@@ -277,19 +304,23 @@ export async function getWeatherFromSupabase(city: CityConfig, targetDate: strin
         temp: record.forecast_c_wu, 
         condition: record.condition_forecast_wu 
       } : null,
-      aviationHistory: record.history_c_aviation !== null ? {
-        temp: record.history_c_aviation
+      aviationHistory: record.history_c_aviation !== null ? { 
+        temp: record.history_c_aviation 
       } : null,
       forecastHistoryWu: record.forecast_history_wu || [],
-      forecastUpdatedAtWu: record.forecast_updated_at_wu,
-      diff_wu_history_aviation_history: record.diff_wu_history_aviation_history,
-      diff_wu_history_wu_forecast: record.diff_wu_history_wu_forecast,
+      forecastUpdatedAtWu: record.forecast_updated_at_wu || null,
+      wuExactTime: record.wu_exact_time || null,
+      wuSyncedAt: record.wu_synced_at || null,
+      aviationExactTime: record.aviation_exact_time || null,
+      aviationSyncedAt: record.aviation_synced_at || null
     }));
 
-    return { hourlyReport, baseTime };
+    return { 
+      hourlyReport,
+      baseTime: baseTime 
+    };
   } catch (err) {
     console.error("[Service] Failed to fetch from Supabase:", err);
     return null;
   }
 }
-

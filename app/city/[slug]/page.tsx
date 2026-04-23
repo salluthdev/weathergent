@@ -7,6 +7,7 @@ import { getWeatherFromSupabase, syncCityData } from "@/lib/weather-service";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
+import ObservationDetailPopup from "@/app/components/ObservationDetailPopup";
 
 const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
 
@@ -84,10 +85,21 @@ export default async function CityDetailPage({
     const fullTimeline = Array.from({ length: 48 }, (_, i) => {
       const slotTimestamp = baseTime + i * 1800;
       const existing = hourlyReport.find((r: any) => r.timestamp === slotTimestamp);
+      
+      // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
+      let inheritedForecast = existing?.wuForecast || null;
+      if (!inheritedForecast && i > 0) {
+        // Look back up to 2 slots (1 hour) to find a forecast to inherit
+        const prevSlot = hourlyReport.find((r: any) => r.timestamp === slotTimestamp - 1800);
+        if (prevSlot?.wuForecast) {
+          inheritedForecast = prevSlot.wuForecast;
+        }
+      }
+
       return existing || {
         timestamp: slotTimestamp,
         wuHistory: null,
-        wuForecast: null,
+        wuForecast: inheritedForecast,
         aviationHistory: null,
         forecastHistoryWu: [],
         forecastUpdatedAtWu: null,
@@ -444,14 +456,38 @@ export default async function CityDetailPage({
                         })()}
                       </td>
                       <td className="p-4 font-bold text-[#3d5516]">
-                        {item.wuHistory
-                          ? `${item.wuHistory.temp}°C / ${toF(item.wuHistory.temp)}°F`
-                          : "-"}
+                        <div className="flex items-center gap-1">
+                          <span>
+                            {item.wuHistory
+                              ? `${item.wuHistory.temp}°C / ${toF(item.wuHistory.temp)}°F`
+                              : "-"}
+                          </span>
+                          {item.wuHistory && (
+                            <ObservationDetailPopup 
+                              temp={item.wuHistory.temp}
+                              exactTime={item.wuExactTime}
+                              syncedAt={item.wuSyncedAt}
+                              source="WU"
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
-                        {item.aviationHistory
-                          ? `${item.aviationHistory.temp}°C / ${toF(item.aviationHistory.temp)}°F`
-                          : "-"}
+                        <div className="flex items-center gap-1">
+                          <span>
+                            {item.aviationHistory
+                              ? `${item.aviationHistory.temp}°C / ${toF(item.aviationHistory.temp)}°F`
+                              : "-"}
+                          </span>
+                          {item.aviationHistory && (
+                            <ObservationDetailPopup 
+                              temp={item.aviationHistory.temp}
+                              exactTime={item.aviationExactTime}
+                              syncedAt={item.aviationSyncedAt}
+                              source="Aviation"
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-[#3d5516]/70 font-bold bg-[#c8ea8e]/10">
                         <div className="flex items-center gap-1">
