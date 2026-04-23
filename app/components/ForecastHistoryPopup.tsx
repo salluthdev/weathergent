@@ -89,7 +89,7 @@ export default function ForecastHistoryPopup({
         className={`p-1 rounded-md transition-all flex items-center justify-center ${
           isOpen 
             ? "bg-[#3d5516] text-[#c8ea8e] shadow-sm" 
-            : "bg-[#3d5516]/10 text-[#3d5516] hover:bg-[#3d5516]/20"
+            : "bg-[#3d5516]/5 text-[#3d5516]/40 hover:bg-[#3d5516]/10 hover:text-[#3d5516]"
         }`}
         title="View Forecast History"
       >

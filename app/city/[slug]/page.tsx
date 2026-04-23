@@ -268,7 +268,7 @@ export default async function CityDetailPage({
             <h2 className="text-lg font-bold opacity-60 uppercase tracking-tight">
               Summary
             </h2>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-xl bg-white/60">
                 <p className="text-[10px] font-black opacity-40 uppercase mb-1">
                   Max History (WU)

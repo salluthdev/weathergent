@@ -12,7 +12,7 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
   // Track the currently viewed month in the calendar
   // Use the initialDate as the starting reference
   const getInitialRefDate = () => {
@@ -45,15 +45,25 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   };
 
   const changeMonth = (offset: number) => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1));
+    setViewDate(
+      new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1),
+    );
   };
 
   const renderMonth = () => {
     const monthName = viewDate.toLocaleString("en-US", { month: "short" });
     const year = viewDate.getFullYear();
 
-    const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
-    const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+    const firstDay = new Date(
+      viewDate.getFullYear(),
+      viewDate.getMonth(),
+      1,
+    ).getDay();
+    const daysInMonth = new Date(
+      viewDate.getFullYear(),
+      viewDate.getMonth() + 1,
+      0,
+    ).getDate();
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
@@ -61,10 +71,12 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-      const currentMonth = (viewDate.getMonth() + 1).toString().padStart(2, "0");
+      const currentMonth = (viewDate.getMonth() + 1)
+        .toString()
+        .padStart(2, "0");
       const currentDay = d.toString().padStart(2, "0");
       const dateStr = `${year}${currentMonth}${currentDay}`;
-      
+
       const isSelected = dateStr === initialDate;
       const isToday = dateStr === todayStr;
 
@@ -73,43 +85,71 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
           key={d}
           onClick={() => handleDateSelect(dateStr)}
           className={`h-6 w-6 rounded-lg text-[9px] font-black transition-all flex items-center justify-center
-            ${isSelected 
-              ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-110 z-10" 
-              : isToday
-                ? "bg-[#c8ea8e] text-[#3d5516] ring-1 ring-[#3d5516]/20"
-                : "hover:bg-[#3d5516]/10 text-[#3d5516]/60 hover:text-[#3d5516]"
+            ${
+              isSelected
+                ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-110 z-10"
+                : isToday
+                  ? "bg-[#c8ea8e] text-[#3d5516] ring-1 ring-[#3d5516]/20"
+                  : "hover:bg-[#3d5516]/10 text-[#3d5516]/60 hover:text-[#3d5516]"
             }
           `}
         >
           {d}
-        </button>
+        </button>,
       );
     }
 
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
-           <button 
-             onClick={() => changeMonth(-1)}
-             className="p-1 rounded hover:bg-[#3d5516]/5 text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
-           >
-             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-           </button>
-           
-           <span className="font-black text-[#3d5516] text-[8px] uppercase tracking-widest opacity-40">
+          <button
+            onClick={() => changeMonth(-1)}
+            className="p-1 rounded hover:bg-[#3d5516]/5 text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+
+          <span className="font-black text-[#3d5516] text-[8px] uppercase tracking-widest opacity-40">
             {monthName} {year}
           </span>
 
-          <button 
-             onClick={() => changeMonth(1)}
-             className="p-1 rounded hover:bg-[#3d5516]/5 text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
-           >
-             <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-           </button>
+          <button
+            onClick={() => changeMonth(1)}
+            className="p-1 rounded hover:bg-[#3d5516]/5 text-[#3d5516]/40 hover:text-[#3d5516] transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
         </div>
         <div className="grid grid-cols-7 gap-0.5 place-items-center">
           {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-            <div key={day} className="h-6 w-6 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20">
+            <div
+              key={day}
+              className="h-6 w-6 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20"
+            >
               {day}
             </div>
           ))}
@@ -122,22 +162,6 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   return (
     <div className="p-4 rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-lg flex flex-col gap-4">
       {renderMonth()}
-      
-      <div className="pt-3 border-t border-[#3d5516]/5 flex items-center justify-between">
-        <div className="flex gap-2">
-           <div className="w-2 h-2 rounded-full bg-[#3d5516]" title="Selected" />
-           <div className="w-2 h-2 rounded-full bg-[#c8ea8e]" title="Today" />
-        </div>
-        <button 
-          onClick={() => {
-            handleDateSelect(todayStr);
-            setViewDate(new Date());
-          }}
-          className="text-[8px] font-black text-[#3d5516] uppercase tracking-widest hover:underline opacity-50 hover:opacity-100"
-        >
-          Today
-        </button>
-      </div>
     </div>
   );
 }
