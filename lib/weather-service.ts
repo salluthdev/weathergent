@@ -19,21 +19,36 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
   console.log(`[Sync] Starting sync for ${city.name} (${targetDate})...`);
 
   try {
-    const [historyRes, hourlyRes, metarRes] = await Promise.all([
+    const cacheBuster = Date.now();
+    const commonHeaders = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Pragma": "no-cache"
+    };
+
+    const [historyRes, hourlyRes, metarRes, currentRes] = await Promise.all([
       fetch(
-        `https://api.weather.com/v1/location/${city.station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${targetDate}&endDate=${targetDate}`
+        `https://api.weather.com/v1/location/${city.station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${targetDate}&endDate=${targetDate}`,
+        { headers: commonHeaders }
       ),
       fetch(
-        `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`
+        `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
+        { headers: commonHeaders }
       ),
       fetch(
-        `https://aviationweather.gov/api/data/metar?ids=${city.icao}&format=json&hours=240`
+        `https://aviationweather.gov/api/data/metar?ids=${city.icao}&format=json&hours=24`,
+        { headers: commonHeaders }
+      ),
+      fetch(
+        `https://api.weather.com/v3/wx/observations/current?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
+        { headers: commonHeaders }
       ),
     ]);
 
     const historyData = await historyRes.json();
     const hourlyForecast = await hourlyRes.json();
     const metarData = await metarRes.json();
+    const currentData = await currentRes.json();
 
     // 1. Fetch existing records from Supabase to prevent overwriting with nulls
     const dbResult = await getWeatherFromSupabase(city, targetDate, supabase);
@@ -44,16 +59,13 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
     const month = parseInt(targetDate.substring(4, 6)) - 1;
     const day = parseInt(targetDate.substring(6, 8));
 
-    const cityLocalMidnight = new Date(
-      new Date(year, month, day).toLocaleString("en-US", {
-        timeZone: city.timezone,
-      })
-    );
-    const offset =
-      new Date(year, month, day).getTime() - cityLocalMidnight.getTime();
-    const baseTime = Math.floor((new Date(year, month, day).getTime() + offset) / 1000);
+    // Robust local midnight calculation:
+    const cityDate = new Date(new Date(year, month, day).toLocaleString("en-US", { timeZone: city.timezone }));
+    const utcDate = new Date(year, month, day);
+    const tzOffsetSeconds = (cityDate.getTime() - utcDate.getTime()) / 1000;
+    const finalBaseTime = Math.floor(utcDate.getTime() / 1000) - tzOffsetSeconds;
 
-    const hours = Array.from({ length: 48 }, (_, i) => baseTime + i * 1800);
+    const hours = Array.from({ length: 48 }, (_, i) => finalBaseTime + i * 1800);
 
     const hourlyReport: HourlyReportItem[] = hours.map((timestamp) => {
       // Find existing data for this slot if any
@@ -62,16 +74,33 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
       // New API data for history
       const historyMatches = (historyData.observations || []).filter((obs: any) => {
         const obsTime = obs.valid_time_gmt;
-        return Math.abs(obsTime - timestamp) <= 900;
+        return Math.abs(obsTime - timestamp) <= 1200; // 20 minutes tolerance
       });
-      // Peak Match: Always select the highest temperature in the window
-      const history = historyMatches.length > 0 
+      
+      const historyEntry = historyMatches.length > 0 
         ? historyMatches.reduce((max: any, obs: any) => (obs.temp > (max.temp ?? -Infinity) ? obs : max))
         : null;
 
+      let history = historyEntry 
+        ? { temp: historyEntry.temp, condition: historyEntry.wx_phrase || historyEntry.phrase_32char } 
+        : (existing?.wuHistory || null);
+
+      // Fallback: If this is a very recent slot (within the last 45 mins) and history is still null,
+      // try to use the "Current Conditions" API data.
+      const nowGmt = Math.floor(Date.now() / 1000);
+      if (!history && Math.abs(nowGmt - timestamp) < 2700) {
+        if (currentData?.validTimeUtc && Math.abs(currentData.validTimeUtc - timestamp) < 1200) {
+          console.log(`[Sync] Using Live Fallback for ${city.name} at ${timestamp}: ${currentData.temperature}°C`);
+          history = {
+            temp: currentData.temperature,
+            condition: currentData.wxPhraseShort || currentData.wxPhraseMedium
+          };
+        }
+      }
+
       // New API data for forecast
       const forecastIndex = hourlyForecast.validTimeUtc?.findIndex(
-        (t: number) => Math.abs(t - timestamp) < 900
+        (t: number) => Math.abs(t - timestamp) < 1200
       );
 
       let forecast = null;
@@ -80,17 +109,25 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
           temp: hourlyForecast.temperature[forecastIndex],
           condition: hourlyForecast.wxPhraseShort[forecastIndex],
         };
+      } else if (existing?.wuForecast) {
+        forecast = existing.wuForecast;
       }
 
       // New API data for Aviation History (METAR)
       const aviationHistoryMatches = metarData?.filter((obs: any) => {
-        const reportTimestamp = Math.floor(new Date(obs.reportTime).getTime() / 1000);
-        return Math.abs(reportTimestamp - timestamp) <= 900;
+        const reportTimeStr = obs.reportTime || obs.obsTime;
+        if (!reportTimeStr) return false;
+        const reportTimestamp = Math.floor(new Date(reportTimeStr).getTime() / 1000);
+        return Math.abs(reportTimestamp - timestamp) <= 1200;
       });
-      // Peak Match: Always select the highest temperature in the window
-      const aviationHistory = (aviationHistoryMatches?.length || 0) > 0
+
+      const aviationEntry = (aviationHistoryMatches?.length || 0) > 0
         ? aviationHistoryMatches.reduce((max: any, obs: any) => (obs.temp > (max.temp ?? -Infinity) ? obs : max))
         : null;
+
+      const aviationHistory = aviationEntry 
+        ? { temp: aviationEntry.temp } 
+        : (existing?.aviationHistory || null);
 
       // Forecast History Tracking
       let forecastHistoryWu = existing?.forecastHistoryWu || [];
