@@ -333,11 +333,20 @@ export default async function CityDetailPage({
               </thead>
               <tbody className="divide-y divide-[#3d5516]/10">
                 {hourlyReport.length > 0 ? (
-                  hourlyReport.map((item: any, idx: number) => (
-                    <tr
-                      key={idx}
-                      className="hover:bg-white/40 transition-colors"
-                    >
+                  hourlyReport.map((item: any, idx: number) => {
+                    const isPeakHistory = idx === lastMaxHistoryIdx;
+                    const isPeakForecast = idx === lastMaxForecastIdx;
+                    const isAnyPeak = isPeakHistory || isPeakForecast;
+
+                    return (
+                      <tr
+                        key={idx}
+                        className={`transition-colors ${
+                          isAnyPeak 
+                            ? "bg-orange-50/50 hover:bg-orange-100/50" 
+                            : "hover:bg-white/40"
+                        }`}
+                      >
                       <td className="p-4 text-[#3d5516] font-medium text-xs">
                         {new Date(item.timestamp * 1000).toLocaleString(
                           "en-US",
@@ -452,7 +461,8 @@ export default async function CityDetailPage({
                           : "-"}
                       </td>
                     </tr>
-                  ))
+                  );
+                })
                 ) : (
                   <tr>
                     <td
