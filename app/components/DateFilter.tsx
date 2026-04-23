@@ -12,7 +12,6 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Helper to get date string in YYYYMMDD
   const formatDateStr = (date: Date, tz: string) => {
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
@@ -37,7 +36,7 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   const renderMonth = (monthOffset: number) => {
     const now = new Date();
     const date = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-    const monthName = date.toLocaleString("en-US", { month: "long" });
+    const monthName = date.toLocaleString("en-US", { month: "short" });
     const year = date.getFullYear();
 
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -45,7 +44,7 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
+      days.push(<div key={`empty-${i}`} className="h-6 w-6" />);
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
@@ -60,12 +59,12 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
         <button
           key={d}
           onClick={() => handleDateSelect(dateStr)}
-          className={`h-10 w-10 rounded-xl text-sm font-bold transition-all flex items-center justify-center
+          className={`h-6 w-6 rounded-lg text-[9px] font-black transition-all flex items-center justify-center
             ${isSelected 
-              ? "bg-[#3d5516] text-[#c8ea8e] shadow-lg scale-110 ring-4 ring-[#3d5516]/10 z-10" 
+              ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-110 z-10" 
               : isToday
-                ? "bg-[#c8ea8e] text-[#3d5516] ring-2 ring-[#3d5516]/20 hover:bg-[#c8ea8e]/80"
-                : "hover:bg-[#3d5516]/10 text-[#3d5516]/70 hover:text-[#3d5516]"
+                ? "bg-[#c8ea8e] text-[#3d5516] ring-1 ring-[#3d5516]/20"
+                : "hover:bg-[#3d5516]/10 text-[#3d5516]/60 hover:text-[#3d5516]"
             }
           `}
         >
@@ -75,13 +74,15 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     }
 
     return (
-      <div className="flex flex-col gap-4 flex-1">
-        <div className="text-center font-black text-[#3d5516] text-xs uppercase tracking-widest opacity-30">
-          {monthName} {year}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between px-1">
+           <span className="font-black text-[#3d5516] text-[8px] uppercase tracking-widest opacity-30">
+            {monthName} {year}
+          </span>
         </div>
-        <div className="grid grid-cols-7 gap-1 place-items-center">
+        <div className="grid grid-cols-7 gap-0.5 place-items-center">
           {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
-            <div key={day} className="h-10 w-10 flex items-center justify-center text-[10px] font-black text-[#3d5516]/20">
+            <div key={day} className="h-6 w-6 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20">
               {day}
             </div>
           ))}
@@ -92,35 +93,25 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   };
 
   return (
-    <section className="w-full animate-in slide-in-from-bottom-4 duration-700">
-      <div className="p-8 rounded-3xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl">
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
-            {renderMonth(-1)}
-            {renderMonth(0)}
-          </div>
-          
-          <div className="pt-6 border-t border-[#3d5516]/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-6">
-               <div className="flex items-center gap-2">
-                 <div className="w-3 h-3 rounded-full bg-[#3d5516] shadow-sm" />
-                 <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-wider">Selected Context</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <div className="w-3 h-3 rounded-full bg-[#c8ea8e] shadow-sm" />
-                 <span className="text-[10px] font-black text-[#3d5516]/40 uppercase tracking-wider">Today in {timezone.split('/').pop()?.replace('_', ' ')}</span>
-               </div>
-            </div>
-            
-            <button 
-              onClick={() => handleDateSelect(todayStr)}
-              className="px-4 py-2 rounded-xl bg-[#3d5516]/5 text-[#3d5516] text-xs font-black uppercase tracking-widest hover:bg-[#3d5516]/10 transition-all active:scale-95"
-            >
-              Back to Today
-            </button>
-          </div>
-        </div>
+    <div className="p-4 rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-lg flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        {renderMonth(-1)}
+        <div className="h-px bg-[#3d5516]/5 mx-2" />
+        {renderMonth(0)}
       </div>
-    </section>
+      
+      <div className="pt-3 border-t border-[#3d5516]/5 flex items-center justify-between">
+        <div className="flex gap-2">
+           <div className="w-2 h-2 rounded-full bg-[#3d5516]" title="Selected" />
+           <div className="w-2 h-2 rounded-full bg-[#c8ea8e]" title="Today" />
+        </div>
+        <button 
+          onClick={() => handleDateSelect(todayStr)}
+          className="text-[8px] font-black text-[#3d5516] uppercase tracking-widest hover:underline opacity-50 hover:opacity-100"
+        >
+          Today
+        </button>
+      </div>
+    </div>
   );
 }

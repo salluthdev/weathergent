@@ -289,6 +289,9 @@ export default async function CityDetailPage({
               </div>
             </div>
           </div>
+          
+          {/* Calendar Navigator now lives in the sidebar */}
+          <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
         </div>
 
         {/* Chart Area */}
@@ -314,9 +317,6 @@ export default async function CityDetailPage({
           />
         </div>
       </main>
-
-      {/* NEW: Permanent Calendar Navigator Section */}
-      <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
 
       <section className="flex flex-col gap-6">
         <h2 className="text-xl font-bold text-[#3d5516]">
