@@ -1,4 +1,5 @@
 import { CityConfig } from "./config";
+import pool from "./db";
 
 const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
 
@@ -17,7 +18,7 @@ export interface HourlyReportItem {
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
-export async function syncCityData(city: CityConfig, targetDate: string, supabase: any) {
+export async function syncCityData(city: CityConfig, targetDate: string) {
   console.log(`[Sync] Starting sync for ${city.name} (${targetDate})...`);
 
   try {
@@ -52,8 +53,8 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
     const metarData = await metarRes.json();
     const currentData = await currentRes.json();
 
-    // 1. Fetch existing records from Supabase to prevent overwriting with nulls
-    const dbResult = await getWeatherFromSupabase(city, targetDate, supabase);
+    // 1. Fetch existing records from DB to prevent overwriting with nulls
+    const dbResult = await getWeatherFromDb(city, targetDate);
     const existingRecords = dbResult?.hourlyReport || [];
 
     // Calculate local timeline
@@ -248,14 +249,45 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
         : null,
     }));
 
-    const { error } = await supabase
-      .from("weather_records")
-      .upsert(recordsToUpsert, { onConflict: "city_name,timestamp_gmt" });
-
-
-    if (error) {
-      console.error(`[Sync] Supabase Error for ${city.name}:`, error.message);
-      return { success: false, error: error.message };
+    for (const record of recordsToUpsert) {
+      await pool.query(`
+        INSERT INTO weather_records (
+          city_name, station_id, timestamp_gmt, city_time, wib_time, 
+          temp_c_wu, temp_f_wu, forecast_c_wu, forecast_f_wu, 
+          history_c_aviation, history_f_aviation, condition_history_wu, 
+          condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
+          wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
+          diff_wu_history_aviation_history, diff_wu_history_wu_forecast
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+        ON CONFLICT (city_name, timestamp_gmt) 
+        DO UPDATE SET 
+          station_id = EXCLUDED.station_id,
+          city_time = EXCLUDED.city_time,
+          wib_time = EXCLUDED.wib_time,
+          temp_c_wu = EXCLUDED.temp_c_wu,
+          temp_f_wu = EXCLUDED.temp_f_wu,
+          forecast_c_wu = EXCLUDED.forecast_c_wu,
+          forecast_f_wu = EXCLUDED.forecast_f_wu,
+          history_c_aviation = EXCLUDED.history_c_aviation,
+          history_f_aviation = EXCLUDED.history_f_aviation,
+          condition_history_wu = EXCLUDED.condition_history_wu,
+          condition_forecast_wu = EXCLUDED.condition_forecast_wu,
+          forecast_history_wu = EXCLUDED.forecast_history_wu,
+          forecast_updated_at_wu = EXCLUDED.forecast_updated_at_wu,
+          wu_exact_time = EXCLUDED.wu_exact_time,
+          wu_synced_at = EXCLUDED.wu_synced_at,
+          aviation_exact_time = EXCLUDED.aviation_exact_time,
+          aviation_synced_at = EXCLUDED.aviation_synced_at,
+          diff_wu_history_aviation_history = EXCLUDED.diff_wu_history_aviation_history,
+          diff_wu_history_wu_forecast = EXCLUDED.diff_wu_history_wu_forecast
+      `, [
+        record.city_name, record.station_id, record.timestamp_gmt, record.city_time, record.wib_time,
+        record.temp_c_wu, record.temp_f_wu, record.forecast_c_wu, record.forecast_f_wu,
+        record.history_c_aviation, record.history_f_aviation, record.condition_history_wu,
+        record.condition_forecast_wu, JSON.stringify(record.forecast_history_wu), record.forecast_updated_at_wu,
+        record.wu_exact_time, record.wu_synced_at, record.aviation_exact_time, record.aviation_synced_at,
+        record.diff_wu_history_aviation_history, record.diff_wu_history_wu_forecast
+      ]);
     }
 
     console.log(`[Sync] Successfully synced ${recordsToUpsert.length} records for ${city.name}.`);
@@ -266,7 +298,7 @@ export async function syncCityData(city: CityConfig, targetDate: string, supabas
   }
 }
 
-export async function getWeatherFromSupabase(city: CityConfig, targetDate: string, supabase: any) {
+export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
   try {
     // Calculate local midnight timestamp (baseTime)
     const year = parseInt(targetDate.substring(0, 4));
@@ -282,36 +314,36 @@ export async function getWeatherFromSupabase(city: CityConfig, targetDate: strin
       new Date(year, month, day).getTime() - cityLocalMidnight.getTime();
     const baseTime = Math.floor((new Date(year, month, day).getTime() + offset) / 1000);
 
-    const { data, error } = await supabase
-      .from("weather_records")
-      .select("*")
-      .eq("city_name", city.slug)
-      .gte("timestamp_gmt", baseTime)
-      .lt("timestamp_gmt", baseTime + 86400)
-      .order("timestamp_gmt", { ascending: true });
+    const result = await pool.query(`
+      SELECT * FROM weather_records 
+      WHERE city_name = $1 
+      AND timestamp_gmt >= $2 
+      AND timestamp_gmt < $3
+      ORDER BY timestamp_gmt ASC
+    `, [city.slug, baseTime, baseTime + 86400]);
 
-    if (error) throw error;
+    const data = result.rows;
     if (!data || data.length === 0) return null;
 
     // Map database records back to the HourlyReportItem format used by the UI
     const hourlyReport = data.map((record: any) => ({
-      timestamp: record.timestamp_gmt,
+      timestamp: Number(record.timestamp_gmt),
       wuHistory: record.temp_c_wu !== null ? { 
-        temp: record.temp_c_wu, 
+        temp: Number(record.temp_c_wu), 
         condition: record.condition_history_wu 
       } : null,
       wuForecast: record.forecast_c_wu !== null ? { 
-        temp: record.forecast_c_wu, 
+        temp: Number(record.forecast_c_wu), 
         condition: record.condition_forecast_wu 
       } : null,
       aviationHistory: record.history_c_aviation !== null ? { 
-        temp: record.history_c_aviation 
+        temp: Number(record.history_c_aviation) 
       } : null,
       forecastHistoryWu: record.forecast_history_wu || [],
       forecastUpdatedAtWu: record.forecast_updated_at_wu || null,
-      wuExactTime: record.wu_exact_time || null,
+      wuExactTime: record.wu_exact_time ? Number(record.wu_exact_time) : null,
       wuSyncedAt: record.wu_synced_at || null,
-      aviationExactTime: record.aviation_exact_time || null,
+      aviationExactTime: record.aviation_exact_time ? Number(record.aviation_exact_time) : null,
       aviationSyncedAt: record.aviation_synced_at || null
     }));
 
@@ -320,7 +352,7 @@ export async function getWeatherFromSupabase(city: CityConfig, targetDate: strin
       baseTime: baseTime 
     };
   } catch (err) {
-    console.error("[Service] Failed to fetch from Supabase:", err);
+    console.error("[Service] Failed to fetch from Db:", err);
     return null;
   }
 }

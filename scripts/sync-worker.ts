@@ -1,18 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { CITIES } from "../lib/config";
 import { syncCityData } from "../lib/weather-service";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error(
-    "Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL in .env",
-  );
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function runSync() {
   const timestamp = new Date().toISOString();
@@ -29,7 +16,7 @@ async function runSync() {
     const [m, d, y] = now.split("/");
     const todayStr = `${y}${m}${d}`;
 
-    await syncCityData(city, todayStr, supabase);
+    await syncCityData(city, todayStr);
   }
 
   console.log(`--- Sync Cycle Complete ---\n`);

@@ -3,9 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import DateFilter from "@/app/components/DateFilter";
 import { getCityBySlug } from "@/lib/config";
-import { getWeatherFromSupabase, syncCityData } from "@/lib/weather-service";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { getWeatherFromDb, syncCityData } from "@/lib/weather-service";
 import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
 import ObservationDetailPopup from "@/app/components/ObservationDetailPopup";
 
@@ -68,10 +66,8 @@ export default async function CityDetailPage({
       return `${y}${m}${d}`;
     })();
 
-  // Use Supabase-First strategy
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const dbResult = await getWeatherFromSupabase(cityData, targetDate, supabase);
+  // Use DB-First strategy
+  const dbResult = await getWeatherFromDb(cityData, targetDate);
 
   let hourlyReport = dbResult?.hourlyReport || [];
   let baseTime = dbResult?.baseTime || 0;
@@ -113,10 +109,10 @@ export default async function CityDetailPage({
     console.log(
       `[UI] Syncing/Upgrading data for ${cityData.name} on ${targetDate}...`,
     );
-    const syncResult = await syncCityData(cityData, targetDate, supabase);
+    const syncResult = await syncCityData(cityData, targetDate);
     if (syncResult.success) {
       // Re-fetch from DB to get the newly synced/upserted records
-      const updatedDbResult = await getWeatherFromSupabase(cityData, targetDate, supabase);
+      const updatedDbResult = await getWeatherFromDb(cityData, targetDate);
       if (updatedDbResult) {
         hourlyReport = updatedDbResult.hourlyReport;
         baseTime = updatedDbResult.baseTime;
