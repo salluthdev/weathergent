@@ -275,9 +275,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           forecast_history_wu = EXCLUDED.forecast_history_wu,
           forecast_updated_at_wu = EXCLUDED.forecast_updated_at_wu,
           wu_exact_time = EXCLUDED.wu_exact_time,
-          wu_synced_at = EXCLUDED.wu_synced_at,
+          wu_synced_at = COALESCE(weather_records.wu_synced_at, EXCLUDED.wu_synced_at),
           aviation_exact_time = EXCLUDED.aviation_exact_time,
-          aviation_synced_at = EXCLUDED.aviation_synced_at,
+          aviation_synced_at = COALESCE(weather_records.aviation_synced_at, EXCLUDED.aviation_synced_at),
           diff_wu_history_aviation_history = EXCLUDED.diff_wu_history_aviation_history,
           diff_wu_history_wu_forecast = EXCLUDED.diff_wu_history_wu_forecast
       `, [
