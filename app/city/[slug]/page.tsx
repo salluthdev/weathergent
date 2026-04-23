@@ -303,7 +303,7 @@ export default async function CityDetailPage({
           </div>
 
           <TemperatureChart
-            data={cityObservations}
+            data={hourlyReport}
             minTemp={minTemp}
             maxTemp={maxTemp}
             timezone={cityData.timezone}

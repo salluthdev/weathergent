@@ -2,13 +2,8 @@
 
 import { useState } from "react";
 
-interface ChartData {
-  temp: number;
-  valid_time_gmt: number;
-}
-
 interface TemperatureChartProps {
-  data: ChartData[];
+  data: any[]; // Now receiving hourlyReport
   minTemp: number | null;
   maxTemp: number | null;
   timezone: string;
@@ -33,7 +28,6 @@ export default function TemperatureChart({
   }
 
   // Calculate chart boundaries
-  const padding = 20;
   const chartMin = Math.floor(minTemp) - 1;
   const chartMax = Math.ceil(maxTemp) + 1;
   const range = chartMax - chartMin || 1;
@@ -44,7 +38,7 @@ export default function TemperatureChart({
     return `${val}${preferredUnit === "F" ? "°F" : "°C"}`;
   };
 
-  // Generate Y-axis ticks (4 levels)
+  // Generate Y-axis ticks
   const yTicks = [0, 1, 2, 3].map(i => {
     const val = chartMax - (i * range) / 3;
     return {
@@ -53,12 +47,27 @@ export default function TemperatureChart({
     };
   });
 
-  // Generate X-axis ticks (6 hour intervals)
+  // Data points with valid history
+  const validPoints = data
+    .map((item, i) => {
+      if (!item.wuHistory) return null;
+      return {
+        item: item.wuHistory,
+        timestamp: item.timestamp,
+        index: i,
+        x: (i / (data.length - 1)) * 1000,
+        y: 180 - ((item.wuHistory.temp - chartMin) / range) * 160
+      };
+    })
+    .filter((p): p is any => p !== null);
+
+  // X-axis ticks (always 24 hours)
   const xTicks = [0, 6, 12, 18, 23].map(hour => {
-    const percent = (hour / 23) * 1000;
+    // 48 slots in total, 2 slots per hour
+    const slotIdx = hour * 2; 
     return {
       label: `${hour.toString().padStart(2, '0')}:00`,
-      x: percent
+      x: (slotIdx / (data.length - 1)) * 1000
     };
   });
 
@@ -75,7 +84,7 @@ export default function TemperatureChart({
           }}
         >
           <div className="whitespace-nowrap">
-            {new Date(hoveredPoint.item.valid_time_gmt * 1000).toLocaleTimeString([], { 
+            {new Date(hoveredPoint.timestamp * 1000).toLocaleTimeString([], { 
               hour: "2-digit", 
               minute: "2-digit", 
               timeZone: timezone,
@@ -122,26 +131,22 @@ export default function TemperatureChart({
               ))}
 
               {/* Data Area & Line */}
-              <path
-                d={`M ${data.map((obs, i) => {
-                  const x = (i / (data.length - 1)) * 1000;
-                  const y = 180 - ((obs.temp - chartMin) / range) * 160;
-                  return `${x},${y}`;
-                }).join(" L ")} L 1000,200 L 0,200 Z`}
-                fill="url(#chartGradient)"
-              />
-              <path
-                d={`M ${data.map((obs, i) => {
-                  const x = (i / (data.length - 1)) * 1000;
-                  const y = 180 - ((obs.temp - chartMin) / range) * 160;
-                  return `${x},${y}`;
-                }).join(" L ")}`}
-                fill="none"
-                stroke="#3d5516"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {validPoints.length > 0 && (
+                <>
+                  <path
+                    d={`M ${validPoints.map(p => `${p.x},${p.y}`).join(" L ")} L ${validPoints[validPoints.length - 1].x},200 L ${validPoints[0].x},200 Z`}
+                    fill="url(#chartGradient)"
+                  />
+                  <path
+                    d={`M ${validPoints.map(p => `${p.x},${p.y}`).join(" L ")}`}
+                    fill="none"
+                    stroke="#3d5516"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              )}
 
               {/* Vertical Indicator on Hover */}
               {hoveredPoint && (
@@ -157,24 +162,20 @@ export default function TemperatureChart({
                 />
               )}
 
-              {/* Invisible Hover Hotspots */}
-              {data.map((obs, i) => {
-                const x = (i / (data.length - 1)) * 1000;
-                const y = 180 - ((obs.temp - chartMin) / range) * 160;
-                return (
-                  <rect
-                    key={i}
-                    x={x - (1000 / data.length / 2)}
-                    y="0"
-                    width={1000 / data.length}
-                    height="200"
-                    fill="transparent"
-                    onMouseEnter={() => setHoveredPoint({ item: obs, index: i, y })}
-                    onMouseLeave={() => setHoveredPoint(null)}
-                    className="cursor-pointer"
-                  />
-                );
-              })}
+              {/* Invisible Hover Hotspots (Only for points with data) */}
+              {validPoints.map((p, i) => (
+                <rect
+                  key={i}
+                  x={p.x - (1000 / data.length / 2)}
+                  y="0"
+                  width={1000 / data.length}
+                  height="200"
+                  fill="transparent"
+                  onMouseEnter={() => setHoveredPoint(p)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                  className="cursor-pointer"
+                />
+              ))}
             </svg>
           </div>
 
