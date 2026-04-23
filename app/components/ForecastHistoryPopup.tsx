@@ -92,7 +92,8 @@ export default function ForecastHistoryPopup({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  if (filteredHistory.length === 0) return null;
+  // if (filteredHistory.length === 0) return null; // Remove this so metadata is always visible
+  const hasHistory = filteredHistory.length > 0;
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
 
@@ -120,6 +121,7 @@ export default function ForecastHistoryPopup({
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="pointer-events-none"
         >
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
@@ -222,51 +224,41 @@ export default function ForecastHistoryPopup({
                 <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase px-1">
                   Previous Versions
                 </p>
-                <div className="flex flex-col gap-2 divide-y divide-[#3d5516]/5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-                  {filteredHistory
-                    .slice()
-                    .reverse()
-                    .map((item, idx) => (
-                      <div key={idx} className="pt-2 px-1 flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[#3d5516]/70">
-                            {preferredUnit === "F" ? `${toF(item.temp)}°F` : `${item.temp}°C`}
-                          </span>
-                          <span className="text-[10px] font-bold text-[#3d5516]/40">
-                            {item.condition}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {/* <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
-                            Last sync:{" "}
-                            {new Date(item.updated_at).toLocaleString("en-US", {
-                              timeZone: timezone,
-                              month: "short",
-                              day: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}{" "}
-                            ({cityName})
-                          </span> */}
-                          <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
-                            Last sync:{" "}
-                            {new Date(item.updated_at).toLocaleString("en-US", {
-                              timeZone: "Asia/Jakarta",
-                              month: "short",
-                              day: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}{" "}
-                            (WIB)
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+                  {hasHistory ? (
+                    <div className="flex flex-col gap-2 divide-y divide-[#3d5516]/5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {filteredHistory
+                        .slice()
+                        .reverse()
+                        .map((item, idx) => (
+                          <div key={idx} className="pt-2 px-1 flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-[#3d5516]/70">
+                                {preferredUnit === "F" ? `${toF(item.temp)}°F` : `${item.temp}°C`}
+                              </span>
+                              <span className="text-[10px] font-bold text-[#3d5516]/40">
+                                {item.condition}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[10px] font-medium text-[#3d5516]/30 leading-tight">
+                                Last sync:{" "}
+                                {new Date(item.updated_at).toLocaleString("en-US", {
+                                  timeZone: "Asia/Jakarta",
+                                  month: "short",
+                                  day: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })} (WIB)
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] italic text-[#3d5516]/30 px-1">No previous versions available</p>
+                  )}
               </div>
             </div>
           </div>,
