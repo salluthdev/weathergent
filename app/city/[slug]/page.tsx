@@ -227,7 +227,7 @@ export default async function CityDetailPage({
             )}
           </div>
         </div>
-        <DateFilter initialDate={targetDate} />
+        <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
       </header>
 
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
