@@ -99,6 +99,10 @@ export default async function CityDetailPage({
         aviationHistory: null,
         forecastHistoryWu: [],
         forecastUpdatedAtWu: null,
+        wuExactTime: null,
+        wuSyncedAt: null,
+        aviationExactTime: null,
+        aviationSyncedAt: null,
       };
     });
     hourlyReport = fullTimeline;
@@ -132,6 +136,10 @@ export default async function CityDetailPage({
       aviationHistory: null,
       forecastHistoryWu: [],
       forecastUpdatedAtWu: null,
+      wuExactTime: null,
+      wuSyncedAt: null,
+      aviationExactTime: null,
+      aviationSyncedAt: null,
     }));
   }
 
