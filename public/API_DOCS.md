@@ -30,7 +30,8 @@ Retrieve a list of all cities currently tracked by the system.
       "station": "KLGA:9:US",
       "timezone": "America/New_York",
       "latitude": 40.77,
-      "longitude": -73.87
+      "longitude": -73.87,
+      "current_date": "20240424"
     }
   ]
 }

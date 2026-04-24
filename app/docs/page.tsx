@@ -63,7 +63,8 @@ export default function DocsPage() {
       "station": "KLGA:9:US",
       "timezone": "America/New_York",
       "latitude": 40.77,
-      "longitude": -73.87
+      "longitude": -73.87,
+      "current_date": "20240424"
     }
   ]
 }`}

@@ -14,18 +14,28 @@ export async function GET(request: NextRequest) {
   const results = [];
 
   for (const city of CITIES) {
-    // Get "today" in city's timezone
-    const now = new Date().toLocaleString("en-US", {
-      timeZone: city.timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const [m, d, y] = now.split("/");
-    const todayStr = `${y}${m}${d}`;
+    const cityResults = [];
+    
+    // Sync Today + Next 7 Days
+    for (let i = 0; i <= 7; i++) {
+      const date = new Date();
+      // Adjust date based on city timezone and offset
+      const cityNow = new Date(new Date().toLocaleString("en-US", { timeZone: city.timezone }));
+      cityNow.setDate(cityNow.getDate() + i);
+      
+      const y = cityNow.getFullYear();
+      const m = String(cityNow.getMonth() + 1).padStart(2, "0");
+      const d = String(cityNow.getDate()).padStart(2, "0");
+      const dateStr = `${y}${m}${d}`;
 
-    const res = await syncCityData(city, todayStr);
-    results.push({ city: city.name, ...res });
+      const res = await syncCityData(city, dateStr);
+      cityResults.push({ date: dateStr, success: res.success });
+    }
+    
+    results.push({ 
+      city: city.name, 
+      syncs: cityResults 
+    });
   }
 
   console.log("[Cron] Weather sync complete.");
