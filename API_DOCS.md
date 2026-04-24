@@ -3,18 +3,22 @@
 Welcome to the Weathergent API. This API provides access to historical weather observations and high-resolution forecasts for 40+ global cities, synchronized from multiple premium sources (Weather Underground & Aviation Weather).
 
 ## Base URL
+
 All API requests should be made to:
-`https://weathergent.io/api` (or `http://localhost:3000/api` for local development)
+`https://weathergent.aixbet.app/api`
 
 ---
 
 ## 1. Cities List
+
 Retrieve a list of all cities currently tracked by the system.
 
 ### Endpoint
+
 `GET /cities`
 
 ### Response Example
+
 ```json
 {
   "success": true,
@@ -35,18 +39,22 @@ Retrieve a list of all cities currently tracked by the system.
 ---
 
 ## 2. Weather Data
+
 Fetch detailed hourly observations and forecasts for a specific city on a specific date.
 
 ### Endpoint
+
 `GET /weather?city={slug}&date={YYYYMMDD}`
 
 ### Parameters
-| Parameter | Type   | Required | Description |
-|-----------|--------|----------|-------------|
+
+| Parameter | Type   | Required | Description                              |
+| --------- | ------ | -------- | ---------------------------------------- |
 | `city`    | string | Yes      | The city slug (e.g., `london`, `tokyo`). |
-| `date`    | string | Yes      | Target date in `YYYYMMDD` format. |
+| `date`    | string | Yes      | Target date in `YYYYMMDD` format.        |
 
 ### Response Example
+
 ```json
 {
   "success": true,
@@ -80,16 +88,20 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
 ---
 
 ## 3. Global Sync (Internal/Cron)
+
 Trigger a background synchronization for all cities. This endpoint is typically called by a GitHub Action or Vercel Cron.
 
 ### Endpoint
+
 `GET /cron/sync`
 
 ### Authentication
+
 Requires a Bearer token in the `Authorization` header.
 `Authorization: Bearer <CRON_SECRET>`
 
 ### Response Example
+
 ```json
 {
   "success": true,
@@ -104,7 +116,9 @@ Requires a Bearer token in the `Authorization` header.
 ---
 
 ## Error Handling
+
 The API uses standard HTTP status codes:
+
 - `200 OK`: Request was successful.
 - `400 Bad Request`: Missing required parameters.
 - `401 Unauthorized`: Missing or invalid Bearer token.
@@ -112,6 +126,7 @@ The API uses standard HTTP status codes:
 - `500 Internal Server Error`: Unexpected database or API error.
 
 All error responses follow this format:
+
 ```json
 {
   "success": false,
