@@ -18,6 +18,16 @@ module.exports = {
       env: {
         NODE_ENV: "production"
       }
+    },
+    {
+      name: "weather-sync-deep",
+      script: "bun",
+      args: "run scripts/sync-full.ts",
+      cron_restart: "0 0 * * *", // Run once a day at midnight
+      autorestart: false,
+      env: {
+        NODE_ENV: "production"
+      }
     }
   ]
 };
