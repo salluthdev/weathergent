@@ -87,34 +87,6 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
 
 ---
 
-## 3. Global Sync (Internal/Cron)
-
-Trigger a background synchronization for all cities. This endpoint is typically called by a GitHub Action or Vercel Cron.
-
-### Endpoint
-
-`GET /cron/sync`
-
-### Authentication
-
-Requires a Bearer token in the `Authorization` header.
-`Authorization: Bearer <CRON_SECRET>`
-
-### Response Example
-
-```json
-{
-  "success": true,
-  "timestamp": "2024-04-24T02:00:00.000Z",
-  "results": [
-    { "city": "Singapore", "success": true, "records": 48 },
-    { "city": "London", "success": true, "records": 48 }
-  ]
-}
-```
-
----
-
 ## Error Handling
 
 The API uses standard HTTP status codes:
