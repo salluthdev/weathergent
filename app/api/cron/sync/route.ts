@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
   for (const city of CITIES) {
     const cityResults = [];
     
-    // Sync Today + Next 7 Days
-    for (let i = 0; i <= 7; i++) {
+    // Sync Today + Next 14 Days
+    for (let i = 0; i <= 14; i++) {
       const date = new Date();
       // Adjust date based on city timezone and offset
       const cityNow = new Date(new Date().toLocaleString("en-US", { timeZone: city.timezone }));

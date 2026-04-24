@@ -3,13 +3,13 @@ import { syncCityData } from "../lib/weather-service";
 
 async function runDeepSync() {
   const timestamp = new Date().toISOString();
-  console.log(`\n--- Starting Global DEEP Sync (7 Days) at ${timestamp} ---`);
+  console.log(`\n--- Starting Global DEEP Sync (14 Days) at ${timestamp} ---`);
 
   for (const city of CITIES) {
     console.log(`\nProcessing ${city.name}...`);
     
-    // Sync Today + Next 7 Days
-    for (let i = 0; i <= 7; i++) {
+    // Sync Today + Next 14 Days
+    for (let i = 0; i <= 14; i++) {
       const cityNow = new Date(new Date().toLocaleString("en-US", { timeZone: city.timezone }));
       cityNow.setDate(cityNow.getDate() + i);
       
