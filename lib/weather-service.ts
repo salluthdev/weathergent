@@ -30,29 +30,39 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       Pragma: "no-cache",
     };
 
+    const now = new Date();
+    const todayStr = now.toLocaleString("en-US", {
+      timeZone: "UTC", // Use UTC for stable comparison
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).replace(/(\d+)\/(\d+)\/(\d+)/, "$3$1$2");
+    
+    const isPast = targetDate < todayStr;
+
     const [historyRes, hourlyRes, metarRes, currentRes] = await Promise.all([
       fetch(
         `https://api.weather.com/v1/location/${city.station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${targetDate}&endDate=${targetDate}`,
         { headers: commonHeaders },
       ),
-      fetch(
+      !isPast ? fetch(
         `https://api.weather.com/v3/wx/forecast/hourly/15day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
         { headers: commonHeaders },
-      ),
+      ) : Promise.resolve({ json: () => ({}) }),
       fetch(
         `https://aviationweather.gov/api/data/metar?ids=${city.icao}&format=json&hours=24`,
         { headers: commonHeaders },
       ),
-      fetch(
+      !isPast ? fetch(
         `https://api.weather.com/v3/wx/observations/current?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
         { headers: commonHeaders },
-      ),
+      ) : Promise.resolve({ json: () => ({}) }),
     ]);
 
     const historyData = await historyRes.json();
-    const hourlyForecast = await hourlyRes.json();
+    const hourlyForecast = isPast ? {} : await (hourlyRes as any).json();
     const metarData = await metarRes.json();
-    const currentData = await currentRes.json();
+    const currentData = isPast ? {} : await (currentRes as any).json();
 
     // 1. Fetch existing records from DB to prevent overwriting with nulls
     const dbResult = await getWeatherFromDb(city, targetDate);
