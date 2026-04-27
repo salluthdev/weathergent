@@ -13,7 +13,7 @@ module.exports = {
       name: "weather-sync",
       script: "bun",
       args: "run scripts/sync-worker.ts",
-      cron_restart: "*/2 * * * *", // Restart every 2 minutes
+      cron_restart: "* * * * *", // Restart every 1 minute
       autorestart: false,
       env: {
         NODE_ENV: "production"
