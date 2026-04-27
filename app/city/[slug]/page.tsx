@@ -7,36 +7,7 @@ import { getWeatherFromDb, syncCityData } from "@/lib/weather-service";
 import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
 import ObservationDetailPopup from "@/app/components/ObservationDetailPopup";
 import TemperatureChart from "@/app/components/TemperatureChart";
-
-const API_KEY = "e1f10a1e78da46f5b10a1e78da96f525";
-
-async function getHistoricalWeather(station: string, date: string) {
-  const url = `https://api.weather.com/v1/location/${station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${date}&endDate=${date}`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-async function getDailyForecast(icao: string) {
-  const url = `https://api.weather.com/v3/wx/forecast/daily/3day?apiKey=${API_KEY}&icaoCode=${icao}&units=m&language=en-US&format=json`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-async function getHourlyForecast(icao: string) {
-  const url = `https://api.weather.com/v3/wx/forecast/hourly/2day?apiKey=${API_KEY}&icaoCode=${icao}&units=m&language=en-US&format=json`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-async function getAviationHistory(icao: string) {
-  const url = `https://aviationweather.gov/api/data/metar?ids=${icao}&format=json&hours=240`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
-  if (!res.ok) return null;
-  return res.json();
-}
+import AutoRefresh from "@/app/components/AutoRefresh";
 
 export default async function CityDetailPage({
   params,
@@ -203,6 +174,7 @@ export default async function CityDetailPage({
 
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-8 gap-8 animate-in fade-in duration-700 pb-20!">
+      <AutoRefresh />
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 group">
