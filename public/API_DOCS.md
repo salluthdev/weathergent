@@ -80,8 +80,19 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
       "wuForecast": {
         "temp": 29,
         "condition": "Scattered Clouds",
-        "updated_at": "2024-04-24T00:00:00Z",
-        "wuForecastHistory": []
+        "updated_at": "2024-04-24T02:30:00Z",
+        "wuForecastHistory": [
+          {
+            "temp": 27,
+            "condition": "Partly Cloudy",
+            "updated_at": "2024-04-24T00:00:00Z"
+          },
+          {
+            "temp": 28,
+            "condition": "Scattered Clouds",
+            "updated_at": "2024-04-24T01:15:00Z"
+          }
+        ]
       }
     }
   ]

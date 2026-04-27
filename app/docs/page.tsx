@@ -179,7 +179,15 @@ export default function DocsPage() {
       "timestamp": 1713916800,
       "wuTemperatureHistory": { "temp": 28, "condition": "Partly Cloudy", "wuExactTime": 1713916740, "wuSyncedAt": "2024-04-24T00:02:15Z" },
       "aviationTemperatureHistory": { "temp": 28.1, "aviationExactTime": 1713916800, "aviationSyncedAt": "2024-04-24T00:05:00Z" },
-      "wuForecast": { "temp": 29, "condition": "Scattered Clouds", "updated_at": "2024-04-24T00:00:00Z", "wuForecastHistory": [] }
+      "wuForecast": { 
+        "temp": 29, 
+        "condition": "Scattered Clouds", 
+        "updated_at": "2024-04-24T02:30:00Z", 
+        "wuForecastHistory": [
+          { "temp": 27, "condition": "Partly Cloudy", "updated_at": "2024-04-24T00:00:00Z" },
+          { "temp": 28, "condition": "Scattered Clouds", "updated_at": "2024-04-24T01:15:00Z" }
+        ] 
+      }
     }
   ]
 }`}
