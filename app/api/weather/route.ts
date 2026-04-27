@@ -45,7 +45,30 @@ export async function GET(request: NextRequest) {
       icao: city.icao,
       date: date,
       timezone: city.timezone,
-      data: result.hourlyReport,
+      data: result.hourlyReport.map((item: any) => ({
+        timestamp: item.timestamp,
+        wuTemperatureHistory: item.wuHistory
+          ? {
+              ...item.wuHistory,
+              wuExactTime: item.wuExactTime,
+              wuSyncedAt: item.wuSyncedAt,
+            }
+          : null,
+        aviationTemperatureHistory: item.aviationHistory
+          ? {
+              ...item.aviationHistory,
+              aviationExactTime: item.aviationExactTime,
+              aviationSyncedAt: item.aviationSyncedAt,
+            }
+          : null,
+        wuForecast: item.wuForecast
+          ? {
+              ...item.wuForecast,
+              updated_at: item.forecastUpdatedAtWu,
+              wuForecastHistory: item.forecastHistoryWu || [],
+            }
+          : null,
+      })),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {

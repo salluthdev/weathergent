@@ -66,21 +66,23 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
   "data": [
     {
       "timestamp": 1713916800,
-      "wuHistory": {
+      "wuTemperatureHistory": {
         "temp": 28,
         "condition": "Partly Cloudy",
-        "precip_rate": 0
+        "wuExactTime": 1713916740,
+        "wuSyncedAt": "2024-04-24T00:02:15Z"
+      },
+      "aviationTemperatureHistory": {
+        "temp": 28.1,
+        "aviationExactTime": 1713916800,
+        "aviationSyncedAt": "2024-04-24T00:05:00Z"
       },
       "wuForecast": {
         "temp": 29,
-        "phrase": "Scattered Clouds"
-      },
-      "aviationHistory": {
-        "temp": 28.1,
-        "altim": 1010
-      },
-      "wuExactTime": 1713916740,
-      "wuSyncedAt": "2024-04-24T00:02:15Z"
+        "condition": "Scattered Clouds",
+        "updated_at": "2024-04-24T00:00:00Z",
+        "wuForecastHistory": []
+      }
     }
   ]
 }
