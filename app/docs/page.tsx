@@ -174,6 +174,8 @@ export default function DocsPage() {
   "icao": "WSSS",
   "date": "20240424",
   "timezone": "Asia/Singapore",
+  "today_max_history_wu": 28,
+  "today_max_forecast_wu": 29,
   "data": [
     {
       "timestamp": 1713916800,

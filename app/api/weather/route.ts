@@ -39,12 +39,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const maxHistory = result.hourlyReport.reduce((max: number | null, item: any) => {
+      const temp = item.wuHistory?.temp;
+      if (temp === undefined || temp === null) return max;
+      return max === null ? temp : Math.max(max, temp);
+    }, null);
+
+    const maxForecast = result.hourlyReport.reduce((max: number | null, item: any) => {
+      const temp = item.wuForecast?.temp;
+      if (temp === undefined || temp === null) return max;
+      return max === null ? temp : Math.max(max, temp);
+    }, null);
+
     return NextResponse.json({
       success: true,
       city: city.name,
       icao: city.icao,
       date: date,
       timezone: city.timezone,
+      today_max_history_wu: maxHistory,
+      today_max_forecast_wu: maxForecast,
       data: result.hourlyReport.map((item: any) => ({
         timestamp: item.timestamp,
         wuTemperatureHistory: item.wuHistory
