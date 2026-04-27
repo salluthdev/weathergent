@@ -10,7 +10,7 @@ async function runSync() {
 
   // Base sync is exactly at minute 0 or 30
   const isBaseSync = minute === 0 || minute === 30;
-  
+
   if (isBaseSync) {
     console.log("-> Performing Base Sync (30-min mark) for all cities...");
   } else {
@@ -36,7 +36,7 @@ async function runSync() {
       const year = parseInt(y);
       const month = parseInt(m) - 1;
       const day = parseInt(d);
-      
+
       const utcDate = new Date(year, month, day);
       const cityDate = new Date(
         new Date(year, month, day).toLocaleString("en-US", {
@@ -44,17 +44,18 @@ async function runSync() {
         }),
       );
       const tzOffsetSeconds = (cityDate.getTime() - utcDate.getTime()) / 1000;
-      const finalBaseTime = Math.floor(utcDate.getTime() / 1000) - tzOffsetSeconds;
+      const finalBaseTime =
+        Math.floor(utcDate.getTime() / 1000) - tzOffsetSeconds;
 
       const currentGmt = Math.floor(nowUtc.getTime() / 1000);
       const secondsSinceMidnight = currentGmt - finalBaseTime;
       const currentBlockIndex = Math.floor(secondsSinceMidnight / 1800);
-      const currentBlockTimestamp = finalBaseTime + (currentBlockIndex * 1800);
+      const currentBlockTimestamp = finalBaseTime + currentBlockIndex * 1800;
 
       // Check DB for missing history
       const result = await pool.query(
         `SELECT temp_c_wu, history_c_aviation FROM weather_records WHERE city_name = $1 AND timestamp_gmt = $2`,
-        [city.slug, currentBlockTimestamp]
+        [city.slug, currentBlockTimestamp],
       );
 
       const record = result.rows[0];
@@ -62,8 +63,10 @@ async function runSync() {
       const hasAviation = record && record.history_c_aviation !== null;
 
       if (!hasWu || !hasAviation) {
-         console.log(`[Sync] ${city.name} missing data for current block (${hasWu ? 'WU: OK' : 'WU: MISSING'}, ${hasAviation ? 'Aviation: OK' : 'Aviation: MISSING'}), scheduling sync...`);
-         citiesToSync.push({ city, todayStr });
+        console.log(
+          `[Sync] ${city.name} missing data for current block (${hasWu ? "WU: OK" : "WU: MISSING"}, ${hasAviation ? "Aviation: OK" : "Aviation: MISSING"}), scheduling sync...`,
+        );
+        citiesToSync.push({ city, todayStr });
       }
     }
   }
@@ -76,7 +79,9 @@ async function runSync() {
     const batchSize = 5;
     for (let i = 0; i < citiesToSync.length; i += batchSize) {
       const batch = citiesToSync.slice(i, i + batchSize);
-      await Promise.all(batch.map(item => syncCityData(item.city, item.todayStr)));
+      await Promise.all(
+        batch.map((item) => syncCityData(item.city, item.todayStr)),
+      );
     }
   }
 

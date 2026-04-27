@@ -6,8 +6,8 @@ module.exports = {
       args: "run start",
       env: {
         NODE_ENV: "production",
-        PORT: 3000
-      }
+        PORT: 3000,
+      },
     },
     {
       name: "weather-sync",
@@ -16,8 +16,8 @@ module.exports = {
       cron_restart: "* * * * *", // Restart every 1 minute
       autorestart: false,
       env: {
-        NODE_ENV: "production"
-      }
+        NODE_ENV: "production",
+      },
     },
     {
       name: "weather-sync-deep",
@@ -26,8 +26,8 @@ module.exports = {
       cron_restart: "0 0 * * *", // Run once a day at midnight
       autorestart: false,
       env: {
-        NODE_ENV: "production"
-      }
-    }
-  ]
+        NODE_ENV: "production",
+      },
+    },
+  ],
 };
