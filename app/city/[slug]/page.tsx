@@ -84,11 +84,20 @@ export default async function CityDetailPage({
           : null;
 
         return {
-          ...(exactMatch || { timestamp: slotTimestamp }),
+          timestamp: slotTimestamp,
+          wuHistory: exactMatch?.wuHistory || null,
+          wuForecast: exactMatch?.wuForecast || inheritedForecast,
+          aviationHistory: exactMatch?.aviationHistory || null,
+          forecastHistoryWu: exactMatch?.forecastHistoryWu || [],
+          forecastUpdatedAtWu: exactMatch?.forecastUpdatedAtWu || null,
+          wuExactTime: exactMatch?.wuExactTime || null,
+          wuSyncedAt: exactMatch?.wuSyncedAt || null,
+          aviationExactTime: exactMatch?.aviationExactTime || null,
+          aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
           bmkgHistory: latestBmkgHistory,
           bmkgForecast: latestBmkgForecast,
-          bmkgHistoryPoints, // Store for popup
-          bmkgForecastPoints, // Store for popup
+          bmkgHistoryPoints,
+          bmkgForecastPoints,
         };
       }
 
