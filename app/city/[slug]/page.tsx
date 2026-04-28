@@ -44,16 +44,19 @@ export default async function CityDetailPage({
   let hourlyReport = dbResult?.hourlyReport || [];
   let baseTime = dbResult?.baseTime || 0;
 
-  // Consider it a 'DB hit' only if it has the full 30-min resolution (48 slots)
-  // This forces an upgrade for older 24-slot records.
-  let isFromDb = !!dbResult && hourlyReport.length >= 48;
+  const isJakarta = cityData.slug === "jakarta";
+  const resolution = isJakarta ? 600 : 1800;
+  const expectedSlots = isJakarta ? 144 : 48;
 
-  // If loading from DB, ensure we have a full 48-slot (30-min) timeline
+  // Consider it a 'DB hit' only if it has the full resolution
+  let isFromDb = !!dbResult && hourlyReport.length >= expectedSlots;
+
+  // If loading from DB, ensure we have a full timeline
   if (isFromDb && hourlyReport.length > 0) {
-    const fullTimeline = Array.from({ length: 48 }, (_, i) => {
-      const slotTimestamp = baseTime + i * 1800;
+    const fullTimeline = Array.from({ length: expectedSlots }, (_, i) => {
+      const slotTimestamp = baseTime + i * resolution;
       const existing = hourlyReport.find(
-        (r: any) => r.timestamp === slotTimestamp,
+        (r: any) => Math.abs(r.timestamp - slotTimestamp) < 60,
       );
 
       // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
@@ -80,6 +83,8 @@ export default async function CityDetailPage({
           wuSyncedAt: null,
           aviationExactTime: null,
           aviationSyncedAt: null,
+          bmkgHistory: null,
+          bmkgForecast: null,
         }
       );
     });
@@ -105,13 +110,13 @@ export default async function CityDetailPage({
 
   // If still no data after sync attempt, we handle it in the UI
   if (hourlyReport.length === 0) {
-    // This part should technically be redundant if syncCityData works,
-    // but we keep it as a safety measure for the UI layout.
-    hourlyReport = Array.from({ length: 48 }, (_, i) => ({
-      timestamp: baseTime + i * 1800,
+    hourlyReport = Array.from({ length: expectedSlots }, (_, i) => ({
+      timestamp: baseTime + i * resolution,
       wuHistory: null,
       wuForecast: null,
       aviationHistory: null,
+      bmkgHistory: null,
+      bmkgForecast: null,
       forecastHistoryWu: [],
       forecastUpdatedAtWu: null,
       wuExactTime: null,
@@ -299,9 +304,29 @@ export default async function CityDetailPage({
                   <th className="p-4 font-semibold">
                     Temp. History (Aviation)
                   </th>
+                  {isJakarta && (
+                    <th className="p-4 font-semibold bg-emerald-700/30">
+                      Temp. History (BMKG)
+                    </th>
+                  )}
                   <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
+                  {isJakarta && (
+                    <th className="p-4 font-semibold bg-emerald-700/30">
+                      Temp. Forecast (BMKG)
+                    </th>
+                  )}
                   <th className="p-4 font-semibold">Condition History (WU)</th>
+                  {isJakarta && (
+                    <th className="p-4 font-semibold text-[#c8ea8e]/70">
+                      Condition History (BMKG)
+                    </th>
+                  )}
                   <th className="p-4 font-semibold">Condition Forecast (WU)</th>
+                  {isJakarta && (
+                    <th className="p-4 font-semibold text-[#c8ea8e]/70">
+                      Condition Forecast (BMKG)
+                    </th>
+                  )}
                   <th className="p-4 font-semibold text-orange-200 text-right">
                     WU History vs Aviation History
                   </th>
@@ -414,16 +439,36 @@ export default async function CityDetailPage({
                             />
                           </div>
                         </td>
+                        {isJakarta && (
+                          <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/5">
+                            {formatTemp(item.bmkgHistory?.temp ?? null)}
+                          </td>
+                        )}
+                        {isJakarta && (
+                          <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/10">
+                            {formatTemp(item.bmkgForecast?.temp ?? null)}
+                          </td>
+                        )}
                         <td className="p-4 text-[#3d5516]/80 text-sm">
                           {item.wuHistory?.condition ||
                             item.wuHistory?.wx_phrase ||
                             "-"}
                         </td>
+                        {isJakarta && (
+                          <td className="p-4 text-[#3d5516]/60 text-xs">
+                            {item.bmkgHistory?.condition || "-"}
+                          </td>
+                        )}
                         <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
                           {item.wuForecast?.condition ||
                             item.wuForecast?.phrase ||
                             "-"}
                         </td>
+                        {isJakarta && (
+                          <td className="p-4 text-[#3d5516]/60 text-xs italic opacity-60">
+                            {item.bmkgForecast?.condition || "-"}
+                          </td>
+                        )}
                         <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
                           {item.wuHistory && item.aviationHistory
                             ? (() => {
@@ -453,7 +498,7 @@ export default async function CityDetailPage({
                 ) : (
                   <tr>
                     <td
-                      colSpan={9}
+                      colSpan={isJakarta ? 13 : 9}
                       className="p-12 text-center text-[#3d5516]/40 italic font-medium"
                     >
                       No historical or forecast data found for this date.

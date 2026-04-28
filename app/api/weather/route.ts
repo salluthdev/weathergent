@@ -82,6 +82,8 @@ export async function GET(request: NextRequest) {
               wuForecastHistory: item.forecastHistoryWu || [],
             }
           : null,
+        bmkgTemperatureHistory: item.bmkgHistory || null,
+        bmkgForecast: item.bmkgForecast || null,
       })),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

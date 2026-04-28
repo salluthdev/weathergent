@@ -29,7 +29,13 @@ async function runSync() {
     const [m, d, y] = now.split("/");
     const todayStr = `${y}${m}${d}`;
 
-    if (isBaseSync) {
+    const isJakarta = city.slug === "jakarta";
+    const resolution = isJakarta ? 600 : 1800;
+    
+    // For Jakarta, we also force sync every 10 minutes to get BMKG updates
+    const isBaseSyncCity = isBaseSync || (isJakarta && minute % 10 === 0);
+
+    if (isBaseSyncCity) {
       citiesToSync.push({ city, todayStr });
     } else {
       // Retries every 1 minute if missing data
@@ -49,22 +55,23 @@ async function runSync() {
 
       const currentGmt = Math.floor(nowUtc.getTime() / 1000);
       const secondsSinceMidnight = currentGmt - finalBaseTime;
-      const currentBlockIndex = Math.floor(secondsSinceMidnight / 1800);
-      const currentBlockTimestamp = finalBaseTime + currentBlockIndex * 1800;
+      const currentBlockIndex = Math.floor(secondsSinceMidnight / resolution);
+      const currentBlockTimestamp = finalBaseTime + currentBlockIndex * resolution;
 
       // Check DB for missing history
       const result = await pool.query(
-        `SELECT temp_c_wu, history_c_aviation FROM weather_records WHERE city_name = $1 AND timestamp_gmt = $2`,
+        `SELECT temp_c_wu, history_c_aviation, temp_c_bmkg FROM weather_records WHERE city_name = $1 AND timestamp_gmt = $2`,
         [city.slug, currentBlockTimestamp],
       );
 
       const record = result.rows[0];
       const hasWu = record && record.temp_c_wu !== null;
       const hasAviation = record && record.history_c_aviation !== null;
+      const hasBmkg = isJakarta ? (record && record.temp_c_bmkg !== null) : true;
 
-      if (!hasWu || !hasAviation) {
+      if (!hasWu || !hasAviation || !hasBmkg) {
         console.log(
-          `[Sync] ${city.name} missing data for current block (${hasWu ? "WU: OK" : "WU: MISSING"}, ${hasAviation ? "Aviation: OK" : "Aviation: MISSING"}), scheduling sync...`,
+          `[Sync] ${city.name} missing data for current block (${hasWu ? "WU: OK" : "WU: MISSING"}, ${hasAviation ? "Aviation: OK" : "Aviation: MISSING"}${isJakarta ? (", BMKG: " + (hasBmkg ? "OK" : "MISSING")) : ""}), scheduling sync...`,
         );
         citiesToSync.push({ city, todayStr });
       }
