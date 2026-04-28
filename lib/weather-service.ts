@@ -231,13 +231,23 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           }
         }
 
-        // BMKG Forecast mapping
+        // BMKG Forecast mapping - Inherit preceding hourly data if no exact match
         if (bmkgForecast?.data?.[0]?.cuaca) {
           const forecasts = bmkgForecast.data[0].cuaca.flat();
-          const match = forecasts.find((f: any) => {
+          // First try exact match with tolerance
+          let match = forecasts.find((f: any) => {
             const fTime = Math.floor(new Date(f.datetime).getTime() / 1000);
             return Math.abs(fTime - timestamp) <= tolerance;
           });
+
+          // Fallback: Try preceding hourly match (up to 1 hour prior)
+          if (!match) {
+            match = forecasts.find((f: any) => {
+              const fTime = Math.floor(new Date(f.datetime).getTime() / 1000);
+              return timestamp - fTime > 0 && timestamp - fTime <= 3600;
+            });
+          }
+
           if (match) {
             bmkgForecastItem = {
               temp: match.t,

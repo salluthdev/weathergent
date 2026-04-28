@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const isJakarta = city.slug === "jakarta";
+
     const maxHistory = result.hourlyReport.reduce((max: number | null, item: any) => {
       const temp = item.wuHistory?.temp;
       if (temp === undefined || temp === null) return max;
@@ -51,6 +53,18 @@ export async function GET(request: NextRequest) {
       return max === null ? temp : Math.max(max, temp);
     }, null);
 
+    const bmkgMaxHistory = isJakarta ? result.hourlyReport.reduce((max: number | null, item: any) => {
+      const temp = item.bmkgHistory?.temp;
+      if (temp === undefined || temp === null) return max;
+      return max === null ? temp : Math.max(max, temp);
+    }, null) : null;
+
+    const bmkgMaxForecast = isJakarta ? result.hourlyReport.reduce((max: number | null, item: any) => {
+      const temp = item.bmkgForecast?.temp;
+      if (temp === undefined || temp === null) return max;
+      return max === null ? temp : Math.max(max, temp);
+    }, null) : null;
+
     return NextResponse.json({
       success: true,
       city: city.name,
@@ -59,6 +73,8 @@ export async function GET(request: NextRequest) {
       timezone: city.timezone,
       today_max_history_wu: maxHistory,
       today_max_forecast_wu: maxForecast,
+      today_max_history_bmkg: bmkgMaxHistory,
+      today_max_forecast_bmkg: bmkgMaxForecast,
       data: result.hourlyReport.map((item: any) => ({
         timestamp: item.timestamp,
         wuTemperatureHistory: item.wuHistory
