@@ -351,8 +351,6 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         item.wuHistory?.condition ?? item.wuHistory?.wx_phrase ?? null,
       condition_forecast_wu:
         item.wuForecast?.condition ?? item.wuForecast?.phrase ?? null,
-      condition_history_bmkg: item.bmkgHistory?.condition ?? null,
-      condition_forecast_bmkg: item.bmkgForecast?.condition ?? null,
       forecast_history_wu: item.forecastHistoryWu,
       forecast_updated_at_wu: item.forecastUpdatedAtWu,
       wu_exact_time: item.wuExactTime,
@@ -365,10 +363,6 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               (item.wuHistory.temp - item.aviationHistory.temp).toFixed(1),
             )
           : null,
-      diff_wu_history_wu_forecast:
-        item.wuHistory && item.wuForecast
-          ? parseFloat((item.wuHistory.temp - item.wuForecast.temp).toFixed(1))
-          : null,
     }));
 
     for (const record of recordsToUpsert) {
@@ -380,10 +374,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           history_c_aviation, history_f_aviation, condition_history_wu, 
           condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
           wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
-          diff_wu_history_aviation_history, diff_wu_history_wu_forecast,
-          temp_c_bmkg, temp_f_bmkg, forecast_c_bmkg, forecast_f_bmkg,
-          condition_history_bmkg, condition_forecast_bmkg
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+          diff_wu_history_aviation_history, 
+          temp_c_bmkg, temp_f_bmkg, forecast_c_bmkg, forecast_f_bmkg
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
         ON CONFLICT (city_name, timestamp_gmt) 
         DO UPDATE SET 
           station_id = EXCLUDED.station_id,
@@ -404,13 +397,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           aviation_exact_time = EXCLUDED.aviation_exact_time,
           aviation_synced_at = COALESCE(weather_records.aviation_synced_at, EXCLUDED.aviation_synced_at),
           diff_wu_history_aviation_history = EXCLUDED.diff_wu_history_aviation_history,
-          diff_wu_history_wu_forecast = EXCLUDED.diff_wu_history_wu_forecast,
           temp_c_bmkg = EXCLUDED.temp_c_bmkg,
           temp_f_bmkg = EXCLUDED.temp_f_bmkg,
           forecast_c_bmkg = EXCLUDED.forecast_c_bmkg,
-          forecast_f_bmkg = EXCLUDED.forecast_f_bmkg,
-          condition_history_bmkg = EXCLUDED.condition_history_bmkg,
-          condition_forecast_bmkg = EXCLUDED.condition_forecast_bmkg
+          forecast_f_bmkg = EXCLUDED.forecast_f_bmkg
       `,
         [
           record.city_name,
@@ -433,13 +423,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.aviation_exact_time,
           record.aviation_synced_at,
           record.diff_wu_history_aviation_history,
-          record.diff_wu_history_wu_forecast,
           record.temp_c_bmkg,
           record.temp_f_bmkg,
           record.forecast_c_bmkg,
           record.forecast_f_bmkg,
-          record.condition_history_bmkg,
-          record.condition_forecast_bmkg,
         ],
       );
     }
@@ -511,11 +498,9 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
           : null,
       bmkgHistory: record.temp_c_bmkg !== null ? {
         temp: Number(record.temp_c_bmkg),
-        condition: record.condition_history_bmkg,
       } : null,
       bmkgForecast: record.forecast_c_bmkg !== null ? {
         temp: Number(record.forecast_c_bmkg),
-        condition: record.condition_forecast_bmkg,
       } : null,
       forecastHistoryWu: record.forecast_history_wu || [],
       forecastUpdatedAtWu: record.forecast_updated_at_wu || null,

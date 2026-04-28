@@ -304,34 +304,22 @@ export default async function CityDetailPage({
                   <th className="p-4 font-semibold">
                     Temp. History (Aviation)
                   </th>
+
+                  <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
                   {isJakarta && (
                     <th className="p-4 font-semibold bg-emerald-700/30">
                       Temp. History (BMKG)
                     </th>
                   )}
-                  <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
                   {isJakarta && (
                     <th className="p-4 font-semibold bg-emerald-700/30">
                       Temp. Forecast (BMKG)
                     </th>
                   )}
                   <th className="p-4 font-semibold">Condition History (WU)</th>
-                  {isJakarta && (
-                    <th className="p-4 font-semibold text-[#c8ea8e]/70">
-                      Condition History (BMKG)
-                    </th>
-                  )}
                   <th className="p-4 font-semibold">Condition Forecast (WU)</th>
-                  {isJakarta && (
-                    <th className="p-4 font-semibold text-[#c8ea8e]/70">
-                      Condition Forecast (BMKG)
-                    </th>
-                  )}
                   <th className="p-4 font-semibold text-orange-200 text-right">
                     WU History vs Aviation History
-                  </th>
-                  <th className="p-4 font-semibold text-orange-200 text-right">
-                    WU History vs WU Forecast
                   </th>
                 </tr>
               </thead>
@@ -454,21 +442,11 @@ export default async function CityDetailPage({
                             item.wuHistory?.wx_phrase ||
                             "-"}
                         </td>
-                        {isJakarta && (
-                          <td className="p-4 text-[#3d5516]/60 text-xs">
-                            {item.bmkgHistory?.condition || "-"}
-                          </td>
-                        )}
                         <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
                           {item.wuForecast?.condition ||
                             item.wuForecast?.phrase ||
                             "-"}
                         </td>
-                        {isJakarta && (
-                          <td className="p-4 text-[#3d5516]/60 text-xs italic opacity-60">
-                            {item.bmkgForecast?.condition || "-"}
-                          </td>
-                        )}
                         <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
                           {item.wuHistory && item.aviationHistory
                             ? (() => {
@@ -481,24 +459,13 @@ export default async function CityDetailPage({
                               })()
                             : "-"}
                         </td>
-                        <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
-                          {item.wuHistory && item.wuForecast
-                            ? (() => {
-                                const diff = (
-                                  item.wuHistory.temp - item.wuForecast.temp
-                                ).toFixed(1);
-                                const prefix = parseFloat(diff) > 0 ? "+" : "";
-                                return `${prefix}${diff}°C`;
-                              })()
-                            : "-"}
-                        </td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
                     <td
-                      colSpan={isJakarta ? 13 : 9}
+                      colSpan={isJakarta ? 9 : 7}
                       className="p-12 text-center text-[#3d5516]/40 italic font-medium"
                     >
                       No historical or forecast data found for this date.
