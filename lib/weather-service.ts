@@ -227,7 +227,6 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           if (Math.abs(bmkgTime - timestamp) <= tolerance) {
             bmkgHistory = {
               temp: bmkgCurrent.data.cuaca.t,
-              condition: bmkgCurrent.data.cuaca.weather_desc_en
             };
           }
         }
@@ -242,7 +241,6 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           if (match) {
             bmkgForecastItem = {
               temp: match.t,
-              condition: match.weather_desc_en
             };
           }
         }
