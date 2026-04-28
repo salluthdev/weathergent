@@ -492,18 +492,7 @@ export default async function CityDetailPage({
                         )}
                         {isJakarta && (
                           <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/10">
-                            <div className="flex items-center gap-1">
-                              <span>{formatTemp(item.bmkgForecast?.temp ?? null)}</span>
-                              {item.bmkgForecastPoints?.length > 0 && (
-                                <ObservationDetailPopup
-                                  temp={item.bmkgForecast.temp}
-                                  exactTime={item.bmkgForecast.timestamp}
-                                  source="BMKG Forecast"
-                                  preferredUnit={cityData.preferredUnit}
-                                  historyPoints={item.bmkgForecastPoints}
-                                />
-                              )}
-                            </div>
+                            {formatTemp(item.bmkgForecast?.temp ?? null)}
                           </td>
                         )}
                         <td className="p-4 text-[#3d5516]/80 text-sm">
