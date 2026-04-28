@@ -45,18 +45,55 @@ export default async function CityDetailPage({
   let baseTime = dbResult?.baseTime || 0;
 
   const isJakarta = cityData.slug === "jakarta";
-  const resolution = isJakarta ? 600 : 1800;
-  const expectedSlots = isJakarta ? 144 : 48;
+  const resolution = 1800; // Always 30 mins in UI
+  const expectedSlots = 48;
 
-  // Consider it a 'DB hit' only if it has the full resolution
-  let isFromDb = !!dbResult && hourlyReport.length >= expectedSlots;
+  // Consider it a 'DB hit' only if it has enough records
+  // For Jakarta, it might have 144 in DB, but we only need to see if data exists
+  let isFromDb = !!dbResult && hourlyReport.length >= (isJakarta ? 144 : 48);
 
-  // If loading from DB, ensure we have a full timeline
+  // If loading from DB, ensure we have a full 48-slot timeline
   if (isFromDb && hourlyReport.length > 0) {
-    const fullTimeline = Array.from({ length: expectedSlots }, (_, i) => {
-      const slotTimestamp = baseTime + i * resolution;
+    const fullTimeline = Array.from({ length: 48 }, (_, i) => {
+      const slotTimestamp = baseTime + i * 1800;
+      
+      // For Jakarta, we aggregate 10-min records into this 30-min slot
+      if (isJakarta) {
+        const subSlots = hourlyReport.filter(
+          (r: any) => r.timestamp >= slotTimestamp && r.timestamp < slotTimestamp + 1800
+        );
+        
+        // Find the main slot (usually at the exact 30-min mark)
+        const exactMatch = subSlots.find((r: any) => r.timestamp === slotTimestamp);
+        
+        // Aggregate BMKG points
+        const bmkgHistoryPoints = subSlots
+          .filter((r: any) => r.bmkgHistory)
+          .map((r: any) => ({ ...r.bmkgHistory, timestamp: r.timestamp }));
+        
+        const latestBmkgHistory = bmkgHistoryPoints.length > 0 
+          ? bmkgHistoryPoints[bmkgHistoryPoints.length - 1] 
+          : null;
+
+        const bmkgForecastPoints = subSlots
+          .filter((r: any) => r.bmkgForecast)
+          .map((r: any) => ({ ...r.bmkgForecast, timestamp: r.timestamp }));
+        
+        const latestBmkgForecast = bmkgForecastPoints.length > 0
+          ? bmkgForecastPoints[bmkgForecastPoints.length - 1]
+          : null;
+
+        return {
+          ...(exactMatch || { timestamp: slotTimestamp }),
+          bmkgHistory: latestBmkgHistory,
+          bmkgForecast: latestBmkgForecast,
+          bmkgHistoryPoints, // Store for popup
+          bmkgForecastPoints, // Store for popup
+        };
+      }
+
       const existing = hourlyReport.find(
-        (r: any) => Math.abs(r.timestamp - slotTimestamp) < 60,
+        (r: any) => r.timestamp === slotTimestamp,
       );
 
       // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
@@ -110,8 +147,8 @@ export default async function CityDetailPage({
 
   // If still no data after sync attempt, we handle it in the UI
   if (hourlyReport.length === 0) {
-    hourlyReport = Array.from({ length: expectedSlots }, (_, i) => ({
-      timestamp: baseTime + i * resolution,
+    hourlyReport = Array.from({ length: 48 }, (_, i) => ({
+      timestamp: baseTime + i * 1800,
       wuHistory: null,
       wuForecast: null,
       aviationHistory: null,
@@ -429,12 +466,34 @@ export default async function CityDetailPage({
                         </td>
                         {isJakarta && (
                           <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/5">
-                            {formatTemp(item.bmkgHistory?.temp ?? null)}
+                            <div className="flex items-center gap-1">
+                              <span>{formatTemp(item.bmkgHistory?.temp ?? null)}</span>
+                              {item.bmkgHistoryPoints?.length > 0 && (
+                                <ObservationDetailPopup
+                                  temp={item.bmkgHistory.temp}
+                                  exactTime={item.bmkgHistory.timestamp}
+                                  source="BMKG"
+                                  preferredUnit={cityData.preferredUnit}
+                                  historyPoints={item.bmkgHistoryPoints}
+                                />
+                              )}
+                            </div>
                           </td>
                         )}
                         {isJakarta && (
                           <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/10">
-                            {formatTemp(item.bmkgForecast?.temp ?? null)}
+                            <div className="flex items-center gap-1">
+                              <span>{formatTemp(item.bmkgForecast?.temp ?? null)}</span>
+                              {item.bmkgForecastPoints?.length > 0 && (
+                                <ObservationDetailPopup
+                                  temp={item.bmkgForecast.temp}
+                                  exactTime={item.bmkgForecast.timestamp}
+                                  source="BMKG Forecast"
+                                  preferredUnit={cityData.preferredUnit}
+                                  historyPoints={item.bmkgForecastPoints}
+                                />
+                              )}
+                            </div>
                           </td>
                         )}
                         <td className="p-4 text-[#3d5516]/80 text-sm">

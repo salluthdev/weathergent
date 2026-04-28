@@ -5,10 +5,11 @@ import { createPortal } from "react-dom";
 
 interface ObservationDetailPopupProps {
   exactTime: number | null;
-  syncedAt: string | null;
+  syncedAt?: string | null;
   source: string;
   temp: number | null;
   preferredUnit: "C" | "F";
+  historyPoints?: { temp: number; timestamp: number }[];
 }
 
 export default function ObservationDetailPopup({
@@ -17,6 +18,7 @@ export default function ObservationDetailPopup({
   source,
   temp,
   preferredUnit,
+  historyPoints,
 }: ObservationDetailPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -137,6 +139,29 @@ export default function ObservationDetailPopup({
                 </p>
               </div>
 
+              {historyPoints && historyPoints.length > 0 && (
+                <div className="flex flex-col gap-2 px-1">
+                  <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase mb-1">Data Points in Range</p>
+                  <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {historyPoints.map((p, i) => (
+                      <div key={i} className="flex items-center justify-between text-[11px] font-bold text-[#3d5516]/80 bg-[#3d5516]/5 p-2 rounded">
+                        <span>
+                          {new Date(p.timestamp * 1000).toLocaleTimeString("en-US", {
+                            timeZone: "Asia/Jakarta",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                          })}
+                        </span>
+                        <span className="text-[#3d5516]">
+                          {preferredUnit === "F" ? `${toF(p.temp)}°F` : `${p.temp}°C`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 px-1">
                 <div className="flex flex-col gap-1">
                   <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase">API Exact Time</p>
@@ -155,22 +180,22 @@ export default function ObservationDetailPopup({
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase">Sync Timestamp</p>
-                  <p className="text-[11px] font-bold text-[#3d5516]/80 leading-tight">
-                    {syncedAt 
-                      ? new Date(syncedAt).toLocaleString("en-US", {
-                          timeZone: "Asia/Jakarta",
-                          month: "short",
-                          day: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        }) + " (WIB)"
-                      : "Not available"}
-                  </p>
-                </div>
+                {syncedAt && (
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase">Sync Timestamp</p>
+                    <p className="text-[11px] font-bold text-[#3d5516]/80 leading-tight">
+                      {new Date(syncedAt).toLocaleString("en-US", {
+                        timeZone: "Asia/Jakarta",
+                        month: "short",
+                        day: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      }) + " (WIB)"}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>,
