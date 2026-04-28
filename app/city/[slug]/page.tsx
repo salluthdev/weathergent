@@ -57,6 +57,23 @@ export default async function CityDetailPage({
     const fullTimeline = Array.from({ length: 48 }, (_, i) => {
       const slotTimestamp = baseTime + i * 1800;
       
+      // Find the main slot/existing record
+      const existing = hourlyReport.find(
+        (r: any) => r.timestamp === slotTimestamp,
+      );
+
+      // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
+      let inheritedForecast = existing?.wuForecast || null;
+      if (!inheritedForecast && i > 0) {
+        // Look back up to 2 slots (1 hour) to find a forecast to inherit
+        const prevSlot = hourlyReport.find(
+          (r: any) => r.timestamp === slotTimestamp - 1800,
+        );
+        if (prevSlot?.wuForecast) {
+          inheritedForecast = prevSlot.wuForecast;
+        }
+      }
+
       // For Jakarta, we aggregate 10-min records into this 30-min slot
       if (isJakarta) {
         const subSlots = hourlyReport.filter(
@@ -99,22 +116,6 @@ export default async function CityDetailPage({
           bmkgHistoryPoints,
           bmkgForecastPoints,
         };
-      }
-
-      const existing = hourlyReport.find(
-        (r: any) => r.timestamp === slotTimestamp,
-      );
-
-      // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
-      let inheritedForecast = existing?.wuForecast || null;
-      if (!inheritedForecast && i > 0) {
-        // Look back up to 2 slots (1 hour) to find a forecast to inherit
-        const prevSlot = hourlyReport.find(
-          (r: any) => r.timestamp === slotTimestamp - 1800,
-        );
-        if (prevSlot?.wuForecast) {
-          inheritedForecast = prevSlot.wuForecast;
-        }
       }
 
       return (
