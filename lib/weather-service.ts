@@ -409,6 +409,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               (item.wuHistory.temp - item.aviationHistory.temp).toFixed(1),
             )
           : null,
+      history_wu: item.wuHistoryList || [],
+      history_aviation: item.aviationHistoryList || [],
     }));
 
     for (const record of recordsToUpsert) {
@@ -476,8 +478,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.temp_f_bmkg,
           record.forecast_c_bmkg,
           record.forecast_f_bmkg,
-          JSON.stringify(item.wuHistoryList),
-          JSON.stringify(item.aviationHistoryList),
+          JSON.stringify(record.history_wu),
+          JSON.stringify(record.history_aviation),
         ],
       );
     }
