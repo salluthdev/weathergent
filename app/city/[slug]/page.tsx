@@ -109,8 +109,10 @@ export default async function CityDetailPage({
           forecastUpdatedAtWu: exactMatch?.forecastUpdatedAtWu || null,
           wuExactTime: exactMatch?.wuExactTime || null,
           wuSyncedAt: exactMatch?.wuSyncedAt || null,
+          wuHistoryList: exactMatch?.wuHistoryList || [],
           aviationExactTime: exactMatch?.aviationExactTime || null,
           aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
+          aviationHistoryList: exactMatch?.aviationHistoryList || [],
           bmkgHistory: latestBmkgHistory,
           bmkgForecast: latestBmkgForecast,
           bmkgHistoryPoints,
@@ -126,6 +128,8 @@ export default async function CityDetailPage({
           aviationHistory: null,
           forecastHistoryWu: [],
           forecastUpdatedAtWu: null,
+          wuHistoryList: [],
+          aviationHistoryList: [],
           wuExactTime: null,
           wuSyncedAt: null,
           aviationExactTime: null,
@@ -168,8 +172,10 @@ export default async function CityDetailPage({
       forecastUpdatedAtWu: null,
       wuExactTime: null,
       wuSyncedAt: null,
+      wuHistoryList: [],
       aviationExactTime: null,
       aviationSyncedAt: null,
+      aviationHistoryList: [],
     }));
   }
 
@@ -437,6 +443,7 @@ export default async function CityDetailPage({
                                 syncedAt={item.wuSyncedAt}
                                 source="WU"
                                 preferredUnit={cityData.preferredUnit}
+                                historyPoints={item.wuHistoryList}
                               />
                             )}
                           </div>
@@ -453,6 +460,7 @@ export default async function CityDetailPage({
                                 syncedAt={item.aviationSyncedAt}
                                 source="Aviation"
                                 preferredUnit={cityData.preferredUnit}
+                                historyPoints={item.aviationHistoryList}
                               />
                             )}
                           </div>

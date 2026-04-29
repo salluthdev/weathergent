@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
               ...item.wuHistory,
               wuExactTime: item.wuExactTime,
               wuSyncedAt: item.wuSyncedAt,
+              wuHistory: item.wuHistoryList || [],
             }
           : null,
         aviationTemperatureHistory: item.aviationHistory
@@ -89,6 +90,7 @@ export async function GET(request: NextRequest) {
               ...item.aviationHistory,
               aviationExactTime: item.aviationExactTime,
               aviationSyncedAt: item.aviationSyncedAt,
+              aviationHistory: item.aviationHistoryList || [],
             }
           : null,
         wuForecast: item.wuForecast

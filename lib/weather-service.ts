@@ -10,6 +10,8 @@ export interface HourlyReportItem {
   aviationHistory?: any;
   forecastHistoryWu?: any[];
   forecastUpdatedAtWu?: string | null;
+  wuHistoryList?: any[];
+  aviationHistoryList?: any[];
   wuExactTime?: number | null;
   wuSyncedAt?: string | null;
   aviationExactTime?: number | null;
@@ -287,6 +289,40 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           forecastUpdatedAtWu = new Date().toISOString();
         }
       }
+      // History Tracking for WU and Aviation
+      let wuHistoryList = existing?.wuHistoryList || [];
+      if (history && existing?.wuHistory) {
+        const oldTemp = Number(existing.wuHistory.temp);
+        const newTemp = Number(history.temp);
+        if (oldTemp !== newTemp) {
+          wuHistoryList = [
+            ...wuHistoryList,
+            {
+              temp: oldTemp,
+              condition: existing.wuHistory.condition,
+              exactTime: existing.wuExactTime,
+              syncedAt: existing.wuSyncedAt,
+            }
+          ];
+        }
+      }
+
+      let aviationHistoryList = existing?.aviationHistoryList || [];
+      if (aviationHistory && existing?.aviationHistory) {
+        const oldTemp = Number(existing.aviationHistory.temp);
+        const newTemp = Number(aviationHistory.temp);
+        if (oldTemp !== newTemp) {
+          aviationHistoryList = [
+            ...aviationHistoryList,
+            {
+              temp: oldTemp,
+              exactTime: existing.aviationExactTime,
+              syncedAt: existing.aviationSyncedAt,
+            }
+          ];
+        }
+      }
+
       // SMART MERGE: Keep existing data if API is null
       return {
         timestamp,
@@ -295,6 +331,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         aviationHistory: aviationHistory,
         forecastHistoryWu,
         forecastUpdatedAtWu,
+        wuHistoryList,
+        aviationHistoryList,
         wuExactTime,
         wuSyncedAt,
         aviationExactTime,
@@ -383,8 +421,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
           wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
           diff_wu_history_aviation_history, 
-          temp_c_bmkg, temp_f_bmkg, forecast_c_bmkg, forecast_f_bmkg
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+          temp_c_bmkg, temp_f_bmkg, forecast_c_bmkg, forecast_f_bmkg,
+          history_wu, history_aviation
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
         ON CONFLICT (city_name, timestamp_gmt) 
         DO UPDATE SET 
           station_id = EXCLUDED.station_id,
@@ -408,7 +447,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           temp_c_bmkg = EXCLUDED.temp_c_bmkg,
           temp_f_bmkg = EXCLUDED.temp_f_bmkg,
           forecast_c_bmkg = EXCLUDED.forecast_c_bmkg,
-          forecast_f_bmkg = EXCLUDED.forecast_f_bmkg
+          forecast_f_bmkg = EXCLUDED.forecast_f_bmkg,
+          history_wu = EXCLUDED.history_wu,
+          history_aviation = EXCLUDED.history_aviation
       `,
         [
           record.city_name,
@@ -435,6 +476,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.temp_f_bmkg,
           record.forecast_c_bmkg,
           record.forecast_f_bmkg,
+          JSON.stringify(item.wuHistoryList),
+          JSON.stringify(item.aviationHistoryList),
         ],
       );
     }
@@ -514,6 +557,8 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
       forecastUpdatedAtWu: record.forecast_updated_at_wu || null,
       wuExactTime: record.wu_exact_time ? Number(record.wu_exact_time) : null,
       wuSyncedAt: record.wu_synced_at || null,
+      aviationHistoryList: record.history_aviation || [],
+      wuHistoryList: record.history_wu || [],
       aviationExactTime: record.aviation_exact_time
         ? Number(record.aviation_exact_time)
         : null,
