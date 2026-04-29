@@ -4,6 +4,15 @@ import path from "path";
 // Load .env from the root directory
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+console.log("Checking DATABASE_URL...");
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is not defined in environment variables!");
+} else {
+  const url = process.env.DATABASE_URL;
+  const masked = url.replace(/:([^@]+)@/, ":****@");
+  console.log("DATABASE_URL found:", masked);
+}
+
 import pool from "../lib/db";
 
 async function migrate() {
