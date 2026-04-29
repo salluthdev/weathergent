@@ -86,7 +86,12 @@ export default async function CityDetailPage({
         // Aggregate BMKG points
         const bmkgHistoryPoints = subSlots
           .filter((r: any) => r.bmkgHistory)
-          .map((r: any) => ({ ...r.bmkgHistory, timestamp: r.timestamp }));
+          .map((r: any) => ({ 
+            ...r.bmkgHistory, 
+            timestamp: r.timestamp,
+            exactTime: r.bmkgExactTime,
+            syncedAt: r.bmkgSyncedAt
+          }));
         
         const latestBmkgHistory = bmkgHistoryPoints.length > 0 
           ? bmkgHistoryPoints[bmkgHistoryPoints.length - 1] 
@@ -94,7 +99,10 @@ export default async function CityDetailPage({
 
         const bmkgForecastPoints = subSlots
           .filter((r: any) => r.bmkgForecast)
-          .map((r: any) => ({ ...r.bmkgForecast, timestamp: r.timestamp }));
+          .map((r: any) => ({ 
+            ...r.bmkgForecast, 
+            timestamp: r.timestamp 
+          }));
         
         const latestBmkgForecast = bmkgForecastPoints.length > 0
           ? bmkgForecastPoints[bmkgForecastPoints.length - 1]

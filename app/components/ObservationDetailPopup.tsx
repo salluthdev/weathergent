@@ -9,7 +9,12 @@ interface ObservationDetailPopupProps {
   source: string;
   temp: number | null;
   preferredUnit: "C" | "F";
-  historyPoints?: { temp: number; timestamp: number }[];
+  historyPoints?: { 
+    temp: number; 
+    timestamp: number;
+    exactTime?: number | null;
+    syncedAt?: string | null;
+  }[];
 }
 
 export default function ObservationDetailPopup({
@@ -28,7 +33,7 @@ export default function ObservationDetailPopup({
   useEffect(() => {
     if (isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const popupWidth = 256; // w-64
+      const popupWidth = 320; // w-80
 
       let top = rect.top + window.scrollY - 20;
       let left = rect.left + rect.width + window.scrollX + 8;
@@ -59,9 +64,21 @@ export default function ObservationDetailPopup({
   }, [isOpen]);
 
   // Hide icon if no metadata to show
-  if (!temp || (!exactTime && !syncedAt)) return null;
+  if (!temp && (!historyPoints || historyPoints.length === 0)) return null;
 
   const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
+
+  const formatDateTime = (ts: number | string) => {
+    const date = typeof ts === "number" ? new Date(ts * 1000) : new Date(ts);
+    return date.toLocaleString("en-US", {
+      timeZone: "Asia/Jakarta",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
 
   return (
     <div className="inline-block ml-2">
@@ -104,7 +121,7 @@ export default function ObservationDetailPopup({
               left: coords.left,
               zIndex: 9999,
             }}
-            className="w-64 p-4 rounded-xl bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl animate-in fade-in zoom-in duration-200 origin-left"
+            className="w-80 p-4 rounded-xl bg-white/95 backdrop-blur-xl border border-white/40 shadow-2xl animate-in fade-in zoom-in duration-200 origin-left"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-black uppercase tracking-widest text-[#3d5516] opacity-60">
@@ -133,29 +150,47 @@ export default function ObservationDetailPopup({
 
             <div className="flex flex-col gap-3">
               <div className="p-3 rounded-lg bg-[#3d5516]/5 border border-[#3d5516]/10">
-                <p className="text-[10px] font-black opacity-40 uppercase mb-2">Recorded Value</p>
+                <p className="text-[10px] font-black opacity-40 uppercase mb-1">Recorded Value</p>
                 <p className="text-lg font-bold text-[#3d5516]">
-                  {preferredUnit === "F" ? `${toF(temp)}°F` : `${temp}°C`}
+                  {temp !== null ? (preferredUnit === "F" ? `${toF(temp)}°F` : `${temp}°C`) : "-"}
                 </p>
               </div>
 
               {historyPoints && historyPoints.length > 0 && (
                 <div className="flex flex-col gap-2 px-1">
                   <p className="text-[9px] font-bold text-[#3d5516]/40 uppercase mb-1">Data Points in Range</p>
-                  <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                     {historyPoints.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between text-[11px] font-bold text-[#3d5516]/80 bg-[#3d5516]/5 p-2 rounded">
-                        <span>
-                          {new Date(p.timestamp * 1000).toLocaleTimeString("en-US", {
-                            timeZone: "Asia/Jakarta",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                          })}
-                        </span>
-                        <span className="text-[#3d5516]">
-                          {preferredUnit === "F" ? `${toF(p.temp)}°F` : `${p.temp}°C`}
-                        </span>
+                      <div key={i} className="flex flex-col gap-1 bg-[#3d5516]/5 p-2 rounded border border-[#3d5516]/5">
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-[#3d5516]/60">
+                            Slot: {new Date(p.timestamp * 1000).toLocaleTimeString("en-US", {
+                              timeZone: "Asia/Jakarta",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            })}
+                          </span>
+                          <span className="text-[#3d5516]">
+                            {preferredUnit === "F" ? `${toF(p.temp)}°F` : `${p.temp}°C`}
+                          </span>
+                        </div>
+                        {(p.exactTime || p.syncedAt) && (
+                          <div className="flex flex-col gap-0.5 border-t border-[#3d5516]/10 pt-1 mt-1">
+                            {p.exactTime && (
+                              <div className="flex justify-between text-[9px] font-medium opacity-50">
+                                <span>API:</span>
+                                <span>{formatDateTime(p.exactTime)}</span>
+                              </div>
+                            )}
+                            {p.syncedAt && (
+                              <div className="flex justify-between text-[9px] font-medium opacity-50">
+                                <span>Sync:</span>
+                                <span>{formatDateTime(p.syncedAt)}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
