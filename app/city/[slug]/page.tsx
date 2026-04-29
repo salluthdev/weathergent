@@ -123,6 +123,8 @@ export default async function CityDetailPage({
           aviationHistoryList: exactMatch?.aviationHistoryList || [],
           bmkgHistory: latestBmkgHistory,
           bmkgForecast: latestBmkgForecast,
+          bmkgExactTime: latestBmkgHistory?.exactTime || null,
+          bmkgSyncedAt: latestBmkgHistory?.syncedAt || null,
           bmkgHistoryPoints,
           bmkgForecastPoints,
         };
@@ -144,6 +146,10 @@ export default async function CityDetailPage({
           aviationSyncedAt: null,
           bmkgHistory: null,
           bmkgForecast: null,
+          bmkgExactTime: null,
+          bmkgSyncedAt: null,
+          bmkgHistoryPoints: [],
+          bmkgForecastPoints: [],
         }
       );
     });
@@ -184,6 +190,8 @@ export default async function CityDetailPage({
       aviationExactTime: null,
       aviationSyncedAt: null,
       aviationHistoryList: [],
+      bmkgExactTime: null,
+      bmkgSyncedAt: null,
     }));
   }
 
