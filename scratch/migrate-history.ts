@@ -1,3 +1,9 @@
+import * as dotenv from "dotenv";
+import path from "path";
+
+// Load .env from the root directory
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
 import pool from "../lib/db";
 
 async function migrate() {
