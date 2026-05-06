@@ -16,6 +16,7 @@ export interface HourlyReportItem {
   wuSyncedAt?: string | null;
   aviationExactTime?: number | null;
   aviationSyncedAt?: string | null;
+  diff_wu_history_aviation_history?: number | null;
 }
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
