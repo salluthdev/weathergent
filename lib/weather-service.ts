@@ -16,10 +16,6 @@ export interface HourlyReportItem {
   wuSyncedAt?: string | null;
   aviationExactTime?: number | null;
   aviationSyncedAt?: string | null;
-  bmkgHistory?: any;
-  bmkgForecast?: any;
-  bmkgExactTime?: number | null;
-  bmkgSyncedAt?: string | null;
 }
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
@@ -220,79 +216,19 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         ? new Date().toISOString()
         : existing?.aviationSyncedAt || null;
 
-      // BMKG Data Mapping (Jakarta only)
-      let bmkgHistory = existing?.bmkgHistory || null;
-      let bmkgForecastItem = null;
-
-      let bmkgExactTime = existing?.bmkgExactTime || null;
-      let bmkgSyncedAt = existing?.bmkgSyncedAt || null;
-
-      if (city.slug === "jakarta") {
-        // BMKG Current mapping
-        if (bmkgCurrent?.data?.cuaca) {
-          const bmkgTime = Math.floor(new Date(bmkgCurrent.data.cuaca.datetime).getTime() / 1000);
-          if (Math.abs(bmkgTime - timestamp) <= tolerance) {
-            bmkgHistory = {
-              temp: bmkgCurrent.data.cuaca.t,
-            };
-            bmkgExactTime = bmkgTime;
-            bmkgSyncedAt = new Date().toISOString();
-          }
-        }
-
-        // BMKG Forecast mapping - Inherit preceding hourly data if no exact match
-        if (bmkgForecast?.data?.[0]?.cuaca) {
-          const forecasts = bmkgForecast.data[0].cuaca.flat();
-          // First try exact match with tolerance
-          let match = forecasts.find((f: any) => {
-            const fTime = Math.floor(new Date(f.datetime).getTime() / 1000);
-            return Math.abs(fTime - timestamp) <= tolerance;
-          });
-
-          // Fallback: Try preceding hourly match (up to 1 hour prior)
-          if (!match) {
-            match = forecasts.find((f: any) => {
-              const fTime = Math.floor(new Date(f.datetime).getTime() / 1000);
-              return timestamp - fTime > 0 && timestamp - fTime <= 3600;
-            });
-          }
-
-          if (match) {
-            bmkgForecastItem = {
-              temp: match.t,
-            };
-          }
-        }
-      }
-
-      // Forecast History Tracking
+      // Forecast History Tracking (WU only)
       let forecastHistoryWu = existing?.forecastHistoryWu || [];
       let forecastUpdatedAtWu = existing?.forecastUpdatedAtWu || null;
-
-      if (forecast) {
-        if (existing?.wuForecast) {
-          const oldTemp = Number(existing.wuForecast.temp);
-          const newTemp = Number(forecast.temp);
-          const isChanged = oldTemp !== newTemp;
-
-          if (isChanged) {
-            console.log(
-              `[Sync] Temperature forecast change detected for ${city.name} at ${timestamp}: ${oldTemp}°C -> ${newTemp}°C`,
-            );
-            forecastHistoryWu = [
-              ...forecastHistoryWu,
-              {
-                temp: existing.wuForecast.temp,
-                condition: existing.wuForecast.condition,
-                updated_at:
-                  existing.forecastUpdatedAtWu ||
-                  new Date(Date.now() - 3600000).toISOString(),
-              },
-            ];
-            forecastUpdatedAtWu = new Date().toISOString();
-          }
-        } else {
-          // First time getting a forecast, use current time
+      if (forecast && existing?.wuForecast) {
+        if (Number(existing.wuForecast.temp) !== Number(forecast.temp)) {
+          forecastHistoryWu = [
+            ...forecastHistoryWu,
+            {
+              temp: existing.wuForecast.temp,
+              condition: existing.wuForecast.condition,
+              updated_at: existing.forecastUpdatedAtWu,
+            },
+          ];
           forecastUpdatedAtWu = new Date().toISOString();
         }
       }
@@ -344,10 +280,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         wuSyncedAt,
         aviationExactTime,
         aviationSyncedAt,
-        bmkgExactTime,
-        bmkgSyncedAt,
-        bmkgHistory,
-        bmkgForecast: bmkgForecastItem || existing?.bmkgForecast || null,
+        diff_wu_history_aviation_history:
+          history?.temp != null && aviationHistory?.temp != null
+            ? parseFloat((history.temp - aviationHistory.temp).toFixed(1))
+            : null,
       };
     });
 
@@ -398,10 +334,6 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         item.aviationHistory?.temp !== undefined
           ? toF(item.aviationHistory.temp)
           : null,
-      temp_c_bmkg: item.bmkgHistory?.temp ?? null,
-      temp_f_bmkg: item.bmkgHistory?.temp !== undefined ? toF(item.bmkgHistory.temp) : null,
-      forecast_c_bmkg: item.bmkgForecast?.temp ?? null,
-      forecast_f_bmkg: item.bmkgForecast?.temp !== undefined ? toF(item.bmkgForecast.temp) : null,
       condition_history_wu:
         item.wuHistory?.condition ?? item.wuHistory?.wx_phrase ?? null,
       condition_forecast_wu:
@@ -412,16 +344,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       wu_synced_at: item.wuSyncedAt,
       aviation_exact_time: item.aviationExactTime,
       aviation_synced_at: item.aviationSyncedAt,
-      diff_wu_history_aviation_history:
-        item.wuHistory && item.aviationHistory
-          ? parseFloat(
-              (item.wuHistory.temp - item.aviationHistory.temp).toFixed(1),
-            )
-          : null,
+      diff_wu_history_aviation_history: item.diff_wu_history_aviation_history,
       history_wu: item.wuHistoryList || [],
       history_aviation: item.aviationHistoryList || [],
-      bmkg_exact_time: item.bmkgExactTime,
-      bmkg_synced_at: item.bmkgSyncedAt,
     }));
 
     for (const record of recordsToUpsert) {
@@ -433,10 +358,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           history_c_aviation, history_f_aviation, condition_history_wu, 
           condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
           wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
-          diff_wu_history_aviation_history, 
-          temp_c_bmkg, temp_f_bmkg, forecast_c_bmkg, forecast_f_bmkg,
-          history_wu, history_aviation, bmkg_exact_time, bmkg_synced_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+          diff_wu_history_aviation_history, history_wu, history_aviation
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
         ON CONFLICT (city_name, timestamp_gmt) 
         DO UPDATE SET 
           station_id = EXCLUDED.station_id,
@@ -457,14 +380,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           aviation_exact_time = EXCLUDED.aviation_exact_time,
           aviation_synced_at = COALESCE(weather_records.aviation_synced_at, EXCLUDED.aviation_synced_at),
           diff_wu_history_aviation_history = EXCLUDED.diff_wu_history_aviation_history,
-          temp_c_bmkg = EXCLUDED.temp_c_bmkg,
-          temp_f_bmkg = EXCLUDED.temp_f_bmkg,
-          forecast_c_bmkg = EXCLUDED.forecast_c_bmkg,
-          forecast_f_bmkg = EXCLUDED.forecast_f_bmkg,
           history_wu = EXCLUDED.history_wu,
-          history_aviation = EXCLUDED.history_aviation,
-          bmkg_exact_time = EXCLUDED.bmkg_exact_time,
-          bmkg_synced_at = COALESCE(weather_records.bmkg_synced_at, EXCLUDED.bmkg_synced_at)
+          history_aviation = EXCLUDED.history_aviation
       `,
         [
           record.city_name,
@@ -487,14 +404,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.aviation_exact_time,
           record.aviation_synced_at,
           record.diff_wu_history_aviation_history,
-          record.temp_c_bmkg,
-          record.temp_f_bmkg,
-          record.forecast_c_bmkg,
-          record.forecast_f_bmkg,
           JSON.stringify(record.history_wu),
           JSON.stringify(record.history_aviation),
-          record.bmkg_exact_time,
-          record.bmkg_synced_at,
         ],
       );
     }
@@ -564,12 +475,6 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
               temp: Number(record.history_c_aviation),
             }
           : null,
-      bmkgHistory: record.temp_c_bmkg !== null ? {
-        temp: Number(record.temp_c_bmkg),
-      } : null,
-      bmkgForecast: record.forecast_c_bmkg !== null ? {
-        temp: Number(record.forecast_c_bmkg),
-      } : null,
       forecastHistoryWu: record.forecast_history_wu || [],
       forecastUpdatedAtWu: record.forecast_updated_at_wu || null,
       wuExactTime: record.wu_exact_time ? Number(record.wu_exact_time) : null,
@@ -580,8 +485,6 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
         ? Number(record.aviation_exact_time)
         : null,
       aviationSyncedAt: record.aviation_synced_at || null,
-      bmkgExactTime: record.bmkg_exact_time ? Number(record.bmkg_exact_time) : null,
-      bmkgSyncedAt: record.bmkg_synced_at || null,
     }));
 
     return {

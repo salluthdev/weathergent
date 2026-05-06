@@ -73,8 +73,6 @@ export async function GET(request: NextRequest) {
       timezone: city.timezone,
       today_max_history_wu: maxHistory,
       today_max_forecast_wu: maxForecast,
-      today_max_history_bmkg: bmkgMaxHistory,
-      today_max_forecast_bmkg: bmkgMaxForecast,
       data: result.hourlyReport.map((item: any) => ({
         timestamp: item.timestamp,
         wuTemperatureHistory: item.wuHistory
@@ -100,8 +98,6 @@ export async function GET(request: NextRequest) {
               wuForecastHistory: item.forecastHistoryWu || [],
             }
           : null,
-        bmkgTemperatureHistory: item.bmkgHistory ? { temp: item.bmkgHistory.temp } : null,
-        bmkgForecast: item.bmkgForecast ? { temp: item.bmkgForecast.temp } : null,
       })),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

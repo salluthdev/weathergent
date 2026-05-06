@@ -83,31 +83,6 @@ export default async function CityDetailPage({
         // Find the main slot (usually at the exact 30-min mark)
         const exactMatch = subSlots.find((r: any) => r.timestamp === slotTimestamp);
         
-        // Aggregate BMKG points
-        const bmkgHistoryPoints = subSlots
-          .filter((r: any) => r.bmkgHistory)
-          .map((r: any) => ({ 
-            ...r.bmkgHistory, 
-            timestamp: r.timestamp,
-            exactTime: r.bmkgExactTime,
-            syncedAt: r.bmkgSyncedAt
-          }));
-        
-        const latestBmkgHistory = bmkgHistoryPoints.length > 0 
-          ? bmkgHistoryPoints[bmkgHistoryPoints.length - 1] 
-          : null;
-
-        const bmkgForecastPoints = subSlots
-          .filter((r: any) => r.bmkgForecast)
-          .map((r: any) => ({ 
-            ...r.bmkgForecast, 
-            timestamp: r.timestamp 
-          }));
-        
-        const latestBmkgForecast = bmkgForecastPoints.length > 0
-          ? bmkgForecastPoints[bmkgForecastPoints.length - 1]
-          : null;
-
         return {
           timestamp: slotTimestamp,
           wuHistory: exactMatch?.wuHistory || null,
@@ -121,12 +96,6 @@ export default async function CityDetailPage({
           aviationExactTime: exactMatch?.aviationExactTime || null,
           aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
           aviationHistoryList: exactMatch?.aviationHistoryList || [],
-          bmkgHistory: latestBmkgHistory,
-          bmkgForecast: latestBmkgForecast,
-          bmkgExactTime: latestBmkgHistory?.exactTime || null,
-          bmkgSyncedAt: latestBmkgHistory?.syncedAt || null,
-          bmkgHistoryPoints,
-          bmkgForecastPoints,
         };
       }
 
@@ -144,12 +113,6 @@ export default async function CityDetailPage({
           wuSyncedAt: null,
           aviationExactTime: null,
           aviationSyncedAt: null,
-          bmkgHistory: null,
-          bmkgForecast: null,
-          bmkgExactTime: null,
-          bmkgSyncedAt: null,
-          bmkgHistoryPoints: [],
-          bmkgForecastPoints: [],
         }
       );
     });
@@ -190,8 +153,6 @@ export default async function CityDetailPage({
       aviationExactTime: null,
       aviationSyncedAt: null,
       aviationHistoryList: [],
-      bmkgExactTime: null,
-      bmkgSyncedAt: null,
     }));
   }
 
@@ -375,16 +336,6 @@ export default async function CityDetailPage({
                   </th>
 
                   <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
-                  {isJakarta && (
-                    <th className="p-4 font-semibold bg-emerald-700/30">
-                      Temp. History (BMKG)
-                    </th>
-                  )}
-                  {isJakarta && (
-                    <th className="p-4 font-semibold bg-emerald-700/30">
-                      Temp. Forecast (BMKG)
-                    </th>
-                  )}
                   <th className="p-4 font-semibold">Condition History (WU)</th>
                   <th className="p-4 font-semibold">Condition Forecast (WU)</th>
                   <th className="p-4 font-semibold text-orange-200 text-right">
@@ -498,27 +449,6 @@ export default async function CityDetailPage({
                             />
                           </div>
                         </td>
-                        {isJakarta && (
-                          <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/5">
-                            <div className="flex items-center gap-1">
-                              <span>{formatTemp(item.bmkgHistory?.temp ?? null)}</span>
-                              {item.bmkgHistoryPoints?.length > 0 && (
-                                <ObservationDetailPopup
-                                  temp={item.bmkgHistory.temp}
-                                  exactTime={item.bmkgHistory.timestamp}
-                                  source="BMKG"
-                                  preferredUnit={cityData.preferredUnit}
-                                  historyPoints={item.bmkgHistoryPoints}
-                                />
-                              )}
-                            </div>
-                          </td>
-                        )}
-                        {isJakarta && (
-                          <td className="p-4 font-bold text-[#3d5516] bg-emerald-500/10">
-                            {formatTemp(item.bmkgForecast?.temp ?? null)}
-                          </td>
-                        )}
                         <td className="p-4 text-[#3d5516]/80 text-sm">
                           {item.wuHistory?.condition ||
                             item.wuHistory?.wx_phrase ||
