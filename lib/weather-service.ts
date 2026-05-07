@@ -102,9 +102,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
     const finalBaseTime =
       Math.floor(utcDate.getTime() / 1000) - tzOffsetSeconds;
 
-    const resolution = city.slug === "jakarta" ? 600 : 1800;
-    const length = city.slug === "jakarta" ? 144 : 48;
-    const tolerance = city.slug === "jakarta" ? 300 : 1200; // 5 mins for 10-min slots, 20 mins for 30-min slots
+    const resolution = 1800;
+    const length = 48;
+    const tolerance = 1200; // 20 mins for 30-min slots
 
     const hours = Array.from(
       { length },

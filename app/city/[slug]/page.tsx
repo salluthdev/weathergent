@@ -74,45 +74,6 @@ export default async function CityDetailPage({
         }
       }
 
-      // For Jakarta, we aggregate 10-min records into this 30-min slot
-      if (isJakarta) {
-        const subSlots = hourlyReport.filter(
-          (r: any) =>
-            r.timestamp >= slotTimestamp && r.timestamp < slotTimestamp + 1800,
-        );
-
-        // Find the main slot (usually at the exact 30-min mark)
-        const exactMatch = subSlots.find(
-          (r: any) => r.timestamp === slotTimestamp,
-        );
-
-        const latestCurrentMatch = [...subSlots]
-          .reverse()
-          .find((r: any) => r.aviationCurrentTemp !== null);
-
-        return {
-          timestamp: slotTimestamp,
-          wuHistory: exactMatch?.wuHistory || null,
-          wuForecast: exactMatch?.wuForecast || inheritedForecast,
-          aviationHistory: exactMatch?.aviationHistory || null,
-          forecastHistoryWu: exactMatch?.forecastHistoryWu || [],
-          forecastUpdatedAtWu: exactMatch?.forecastUpdatedAtWu || null,
-          wuExactTime: exactMatch?.wuExactTime || null,
-          wuSyncedAt: exactMatch?.wuSyncedAt || null,
-          wuHistoryList: exactMatch?.wuHistoryList || [],
-          aviationExactTime: exactMatch?.aviationExactTime || null,
-          aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
-          aviationHistoryList: exactMatch?.aviationHistoryList || [],
-          aviationCurrentTemp: latestCurrentMatch?.aviationCurrentTemp || null,
-          aviationCurrentExactTime:
-            latestCurrentMatch?.aviationCurrentExactTime || null,
-          aviationCurrentSyncedAt: latestCurrentMatch?.aviationCurrentSyncedAt || null,
-          aviationCurrentHistory: latestCurrentMatch?.aviationCurrentHistory || [],
-          diff_wu_history_aviation_history:
-            exactMatch?.diff_wu_history_aviation_history || null,
-        };
-      }
-
       return (
         existing || {
           timestamp: slotTimestamp,
