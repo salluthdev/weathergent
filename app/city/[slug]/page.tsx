@@ -153,8 +153,6 @@ export default async function CityDetailPage({
       wuHistory: null,
       wuForecast: null,
       aviationHistory: null,
-      bmkgHistory: null,
-      bmkgForecast: null,
       forecastHistoryWu: [],
       forecastUpdatedAtWu: null,
       wuExactTime: null,
@@ -167,6 +165,7 @@ export default async function CityDetailPage({
       aviationCurrentExactTime: null,
       aviationCurrentSyncedAt: null,
       aviationCurrentHistory: [],
+      diff_wu_history_aviation_history: null,
     }));
   }
 
