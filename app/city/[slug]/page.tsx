@@ -100,6 +100,7 @@ export default async function CityDetailPage({
           aviationCurrentExactTime: exactMatch?.aviationCurrentExactTime || null,
           aviationCurrentSyncedAt: exactMatch?.aviationCurrentSyncedAt || null,
           aviationCurrentHistory: exactMatch?.aviationCurrentHistory || [],
+          diff_wu_history_aviation_history: exactMatch?.diff_wu_history_aviation_history || null,
         };
       }
 
@@ -121,6 +122,7 @@ export default async function CityDetailPage({
           aviationCurrentExactTime: null,
           aviationCurrentSyncedAt: null,
           aviationCurrentHistory: [],
+          diff_wu_history_aviation_history: null,
         }
       );
     });
