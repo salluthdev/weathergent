@@ -56,7 +56,7 @@ export default async function CityDetailPage({
   if (isFromDb && hourlyReport.length > 0) {
     const fullTimeline = Array.from({ length: 48 }, (_, i) => {
       const slotTimestamp = baseTime + i * 1800;
-      
+
       // Find the main slot/existing record
       const existing = hourlyReport.find(
         (r: any) => r.timestamp === slotTimestamp,
@@ -77,12 +77,19 @@ export default async function CityDetailPage({
       // For Jakarta, we aggregate 10-min records into this 30-min slot
       if (isJakarta) {
         const subSlots = hourlyReport.filter(
-          (r: any) => r.timestamp >= slotTimestamp && r.timestamp < slotTimestamp + 1800
+          (r: any) =>
+            r.timestamp >= slotTimestamp && r.timestamp < slotTimestamp + 1800,
         );
-        
+
         // Find the main slot (usually at the exact 30-min mark)
-        const exactMatch = subSlots.find((r: any) => r.timestamp === slotTimestamp);
-        
+        const exactMatch = subSlots.find(
+          (r: any) => r.timestamp === slotTimestamp,
+        );
+
+        const latestCurrentMatch = [...subSlots]
+          .reverse()
+          .find((r: any) => r.aviationCurrentTemp !== null);
+
         return {
           timestamp: slotTimestamp,
           wuHistory: exactMatch?.wuHistory || null,
@@ -96,11 +103,13 @@ export default async function CityDetailPage({
           aviationExactTime: exactMatch?.aviationExactTime || null,
           aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
           aviationHistoryList: exactMatch?.aviationHistoryList || [],
-          aviationCurrentTemp: exactMatch?.aviationCurrentTemp || null,
-          aviationCurrentExactTime: exactMatch?.aviationCurrentExactTime || null,
-          aviationCurrentSyncedAt: exactMatch?.aviationCurrentSyncedAt || null,
-          aviationCurrentHistory: exactMatch?.aviationCurrentHistory || [],
-          diff_wu_history_aviation_history: exactMatch?.diff_wu_history_aviation_history || null,
+          aviationCurrentTemp: latestCurrentMatch?.aviationCurrentTemp || null,
+          aviationCurrentExactTime:
+            latestCurrentMatch?.aviationCurrentExactTime || null,
+          aviationCurrentSyncedAt: latestCurrentMatch?.aviationCurrentSyncedAt || null,
+          aviationCurrentHistory: latestCurrentMatch?.aviationCurrentHistory || [],
+          diff_wu_history_aviation_history:
+            exactMatch?.diff_wu_history_aviation_history || null,
         };
       }
 
@@ -452,16 +461,17 @@ export default async function CityDetailPage({
                             <span>
                               {formatTemp(item.aviationCurrentTemp ?? null)}
                             </span>
-                            {item.aviationCurrentHistory && item.aviationCurrentHistory.length > 0 && (
-                              <ObservationDetailPopup
-                                temp={item.aviationCurrentTemp}
-                                exactTime={item.aviationCurrentExactTime}
-                                syncedAt={item.aviationCurrentSyncedAt}
-                                source="Current Aviation"
-                                preferredUnit={cityData.preferredUnit}
-                                historyPoints={item.aviationCurrentHistory}
-                              />
-                            )}
+                            {item.aviationCurrentHistory &&
+                              item.aviationCurrentHistory.length > 0 && (
+                                <ObservationDetailPopup
+                                  temp={item.aviationCurrentTemp}
+                                  exactTime={item.aviationCurrentExactTime}
+                                  syncedAt={item.aviationCurrentSyncedAt}
+                                  source="Current Aviation"
+                                  preferredUnit={cityData.preferredUnit}
+                                  historyPoints={item.aviationCurrentHistory}
+                                />
+                              )}
                           </div>
                         </td>
                         <td
