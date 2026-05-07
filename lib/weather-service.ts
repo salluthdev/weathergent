@@ -260,6 +260,12 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
             aviationCurrentSyncedAt = lSyncedAt;
           }
         }
+      } else {
+        // Not the active block, clear current live fields
+        aviationCurrentTemp = null;
+        aviationCurrentExactTime = null;
+        aviationCurrentSyncedAt = null;
+        aviationCurrentHistory = [];
       }
 
       // Forecast History Tracking (WU only)
