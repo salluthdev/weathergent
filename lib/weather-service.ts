@@ -231,8 +231,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       let aviationCurrentExactTime = existing?.aviationCurrentExactTime || null;
       let aviationCurrentSyncedAt = existing?.aviationCurrentSyncedAt || null;
 
-      // Only update current history for the current or very recent block
-      if (Math.abs(nowGmt - timestamp) < 3600) {
+      // Only update current history for the current active block
+      if (nowGmt >= timestamp && nowGmt < timestamp + resolution) {
         const latestMetar = metarData?.[0]; // Usually the first is latest
         if (latestMetar) {
           const lTemp = latestMetar.temp;
