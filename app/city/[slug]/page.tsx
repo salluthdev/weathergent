@@ -311,19 +311,19 @@ export default async function CityDetailPage({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#3d5516] text-[#c8ea8e]">
-                  <th className="p-4 font-semibold">City Time</th>
-                  <th className="p-4 font-semibold">WIB Time</th>
-                  <th className="p-4 font-semibold">Temp. History (WU)</th>
-                  <th className="p-4 font-semibold bg-blue-500/10">
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">City Time</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">WIB Time</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Temp. History (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] border-l border-white/10">
                     Temp. History (Aviation)
                   </th>
-                  <th className="p-4 font-semibold bg-blue-500/20">
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] border-l border-white/10">
                     Current Temp (Aviation)
                   </th>
-                  <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
-                  <th className="p-4 font-semibold">Condition History (WU)</th>
-                  <th className="p-4 font-semibold">Condition Forecast (WU)</th>
-                  <th className="p-4 font-semibold text-orange-200 text-right">
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Temp. Forecast (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Condition History (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Condition Forecast (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] text-orange-200 text-right">
                     WU History vs Aviation History
                   </th>
                 </tr>
