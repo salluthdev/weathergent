@@ -306,23 +306,35 @@ export default async function CityDetailPage({
         <h2 className="text-xl font-bold text-[#3d5516]">
           Detailed Observations
         </h2>
-        <div className="overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl">
-          <div className="overflow-x-auto">
+        <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl overflow-hidden">
+          <div className="overflow-auto max-h-[75vh] scroll-smooth">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#3d5516] text-[#c8ea8e]">
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">City Time</th>
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">WIB Time</th>
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Temp. History (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    City Time
+                  </th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    WIB Time
+                  </th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    Temp. History (WU)
+                  </th>
                   <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] border-l border-white/10">
                     Temp. History (Aviation)
                   </th>
                   <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] border-l border-white/10">
                     Current Temp (Aviation)
                   </th>
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Temp. Forecast (WU)</th>
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Condition History (WU)</th>
-                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">Condition Forecast (WU)</th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    Temp. Forecast (WU)
+                  </th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    Condition History (WU)
+                  </th>
+                  <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
+                    Condition Forecast (WU)
+                  </th>
                   <th className="p-4 font-semibold sticky top-0 bg-[#3d5516] z-20 shadow-[0_1px_0_rgba(255,255,255,0.1)] text-orange-200 text-right">
                     WU History vs Aviation History
                   </th>
