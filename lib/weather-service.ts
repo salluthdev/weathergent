@@ -38,49 +38,70 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
     };
 
     const now = new Date();
-    const todayStr = now.toLocaleString("en-US", {
-      timeZone: "UTC", // Use UTC for stable comparison
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).replace(/(\d+)\/(\d+)\/(\d+)/, "$3$1$2");
-    
+    const todayStr = now
+      .toLocaleString("en-US", {
+        timeZone: "UTC", // Use UTC for stable comparison
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .replace(/(\d+)\/(\d+)\/(\d+)/, "$3$1$2");
+
     const isPast = targetDate < todayStr;
     const nowGmt = Math.floor(now.getTime() / 1000);
 
-    const [historyRes, hourlyRes, metarRes, currentRes, bmkgCurrentRes, bmkgForecastRes] = await Promise.all([
+    const [
+      historyRes,
+      hourlyRes,
+      metarRes,
+      currentRes,
+      bmkgCurrentRes,
+      bmkgForecastRes,
+    ] = await Promise.all([
       fetch(
         `https://api.weather.com/v1/location/${city.station}/observations/historical.json?apiKey=${API_KEY}&units=m&startDate=${targetDate}&endDate=${targetDate}`,
         { headers: commonHeaders },
       ),
-      !isPast ? fetch(
-        `https://api.weather.com/v3/wx/forecast/hourly/15day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
-        { headers: commonHeaders },
-      ) : Promise.resolve({ json: () => ({}) }),
+      !isPast
+        ? fetch(
+            `https://api.weather.com/v3/wx/forecast/hourly/15day?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
+            { headers: commonHeaders },
+          )
+        : Promise.resolve({ json: () => ({}) }),
       fetch(
         `https://aviationweather.gov/api/data/metar?ids=${city.icao}&format=json&hours=24`,
         { headers: commonHeaders },
       ),
-      !isPast ? fetch(
-        `https://api.weather.com/v3/wx/observations/current?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
-        { headers: commonHeaders },
-      ) : Promise.resolve({ json: () => ({}) }),
-      city.slug === "jakarta" ? fetch(
-        `https://cuaca.bmkg.go.id/api/presentwx/coord?lon=${city.lon}&lat=${city.lat}`,
-        { headers: commonHeaders },
-      ) : Promise.resolve({ json: () => ({}) }),
-      city.slug === "jakarta" && !isPast ? fetch(
-        `https://cuaca.bmkg.go.id/api/df/v1/forecast/coord?lon=${city.lon}&lat=${city.lat}`,
-        { headers: commonHeaders },
-      ) : Promise.resolve({ json: () => ({}) }),
+      !isPast
+        ? fetch(
+            `https://api.weather.com/v3/wx/observations/current?apiKey=${API_KEY}&icaoCode=${city.icao}&units=m&language=en-US&format=json`,
+            { headers: commonHeaders },
+          )
+        : Promise.resolve({ json: () => ({}) }),
+      city.slug === "jakarta"
+        ? fetch(
+            `https://cuaca.bmkg.go.id/api/presentwx/coord?lon=${city.lon}&lat=${city.lat}`,
+            { headers: commonHeaders },
+          )
+        : Promise.resolve({ json: () => ({}) }),
+      city.slug === "jakarta" && !isPast
+        ? fetch(
+            `https://cuaca.bmkg.go.id/api/df/v1/forecast/coord?lon=${city.lon}&lat=${city.lat}`,
+            { headers: commonHeaders },
+          )
+        : Promise.resolve({ json: () => ({}) }),
     ]);
 
     const historyData = await historyRes.json();
     const hourlyForecast = isPast ? {} : await (hourlyRes as any).json();
     const metarData = await metarRes.json();
     const currentData = isPast ? {} : await (currentRes as any).json();
-    const bmkgCurrent = city.slug === "jakarta" ? await (bmkgCurrentRes as any).json() : {};
-    const bmkgForecast = city.slug === "jakarta" && !isPast ? await (bmkgForecastRes as any).json() : {};
+    const bmkgCurrent =
+      city.slug === "jakarta" ? await (bmkgCurrentRes as any).json() : {};
+    const bmkgForecast =
+      city.slug === "jakarta" && !isPast
+        ? await (bmkgForecastRes as any).json()
+        : {};
 
     // 1. Fetch existing records from DB to prevent overwriting with nulls
     const dbResult = await getWeatherFromDb(city, targetDate);
@@ -216,7 +237,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
 
       const aviationExactTime = aviationEntry
         ? Math.floor(
-            new Date(aviationEntry.reportTime || aviationEntry.obsTime).getTime() / 1000,
+            new Date(
+              aviationEntry.reportTime || aviationEntry.obsTime,
+            ).getTime() / 1000,
           )
         : existing?.aviationExactTime || null;
 
@@ -236,12 +259,18 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         const latestMetar = metarData?.[0]; // Usually the first is latest
         if (latestMetar) {
           const lTemp = latestMetar.temp;
-          const lExactTime = Math.floor(new Date(latestMetar.reportTime || latestMetar.obsTime).getTime() / 1000);
+          const lExactTime = Math.floor(
+            new Date(latestMetar.reportTime || latestMetar.obsTime).getTime() /
+              1000,
+          );
           const lSyncedAt = new Date().toISOString();
 
           // Add to history if it's a new minute or first entry
-          const lastEntry = aviationCurrentHistory[aviationCurrentHistory.length - 1];
-          const lastSyncedMinute = lastEntry ? new Date(lastEntry.syncedAt).getMinutes() : -1;
+          const lastEntry =
+            aviationCurrentHistory[aviationCurrentHistory.length - 1];
+          const lastSyncedMinute = lastEntry
+            ? new Date(lastEntry.syncedAt).getMinutes()
+            : -1;
           const currentMinute = new Date().getMinutes();
 
           if (!lastEntry || lastSyncedMinute !== currentMinute) {
@@ -251,10 +280,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
                 temp: lTemp,
                 exactTime: lExactTime,
                 syncedAt: lSyncedAt,
-                timestamp: nowGmt
-              }
+                timestamp: nowGmt,
+              },
             ].slice(-60);
-            
+
             aviationCurrentTemp = lTemp;
             aviationCurrentExactTime = lExactTime;
             aviationCurrentSyncedAt = lSyncedAt;
@@ -291,7 +320,7 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               condition: existing.wuHistory.condition,
               exactTime: existing.wuExactTime,
               syncedAt: existing.wuSyncedAt,
-            }
+            },
           ];
         }
       }
@@ -307,7 +336,7 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               temp: oldTemp,
               exactTime: existing.aviationExactTime,
               syncedAt: existing.aviationSyncedAt,
-            }
+            },
           ];
         }
       }
@@ -549,8 +578,13 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
         : null,
       aviationSyncedAt: record.aviation_synced_at || null,
       diff_wu_history_aviation_history: record.diff_wu_history_aviation_history,
-      aviationCurrentTemp: record.temp_c_aviation_current !== null ? Number(record.temp_c_aviation_current) : null,
-      aviationCurrentExactTime: record.aviation_current_exact_time ? Number(record.aviation_current_exact_time) : null,
+      aviationCurrentTemp:
+        record.temp_c_aviation_current !== null
+          ? Number(record.temp_c_aviation_current)
+          : null,
+      aviationCurrentExactTime: record.aviation_current_exact_time
+        ? Number(record.aviation_current_exact_time)
+        : null,
       aviationCurrentSyncedAt: record.aviation_current_synced_at || null,
       aviationCurrentHistory: record.history_aviation_current || [],
     }));
