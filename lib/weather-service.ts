@@ -17,6 +17,10 @@ export interface HourlyReportItem {
   aviationExactTime?: number | null;
   aviationSyncedAt?: string | null;
   diff_wu_history_aviation_history?: number | null;
+  aviationCurrentHistory?: any[];
+  aviationCurrentExactTime?: number | null;
+  aviationCurrentSyncedAt?: string | null;
+  aviationCurrentTemp?: number | null;
 }
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
@@ -42,6 +46,7 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
     }).replace(/(\d+)\/(\d+)\/(\d+)/, "$3$1$2");
     
     const isPast = targetDate < todayStr;
+    const nowGmt = Math.floor(now.getTime() / 1000);
 
     const [historyRes, hourlyRes, metarRes, currentRes, bmkgCurrentRes, bmkgForecastRes] = await Promise.all([
       fetch(
@@ -198,7 +203,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       const aviationEntry =
         (aviationHistoryMatches?.length || 0) > 0
           ? aviationHistoryMatches.reduce((max: any, obs: any) =>
-              obs.temp > (max.temp ?? -Infinity) ? obs : max,
+              new Date(obs.reportTime || obs.obsTime).getTime() >
+              new Date(max.reportTime || max.obsTime).getTime()
+                ? obs
+                : max,
             )
           : null;
 
@@ -208,14 +216,51 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
 
       const aviationExactTime = aviationEntry
         ? Math.floor(
-            new Date(
-              aviationEntry.reportTime || aviationEntry.obsTime,
-            ).getTime() / 1000,
+            new Date(aviationEntry.reportTime || aviationEntry.obsTime).getTime() / 1000,
           )
         : existing?.aviationExactTime || null;
+
       const aviationSyncedAt = aviationEntry
         ? new Date().toISOString()
         : existing?.aviationSyncedAt || null;
+
+      // Real-time "Current Aviation" logic
+      // Always use the latest METAR from the entire response list for the CURRENT block
+      let aviationCurrentHistory = existing?.aviationCurrentHistory || [];
+      let aviationCurrentTemp = existing?.aviationCurrentTemp || null;
+      let aviationCurrentExactTime = existing?.aviationCurrentExactTime || null;
+      let aviationCurrentSyncedAt = existing?.aviationCurrentSyncedAt || null;
+
+      // Only update current history for the current or very recent block
+      if (Math.abs(nowGmt - timestamp) < 3600) {
+        const latestMetar = metarData?.[0]; // Usually the first is latest
+        if (latestMetar) {
+          const lTemp = latestMetar.temp;
+          const lExactTime = Math.floor(new Date(latestMetar.reportTime || latestMetar.obsTime).getTime() / 1000);
+          const lSyncedAt = new Date().toISOString();
+
+          // Add to history if it's a new minute or first entry
+          const lastEntry = aviationCurrentHistory[aviationCurrentHistory.length - 1];
+          const lastSyncedMinute = lastEntry ? new Date(lastEntry.syncedAt).getMinutes() : -1;
+          const currentMinute = new Date().getMinutes();
+
+          if (!lastEntry || lastSyncedMinute !== currentMinute) {
+            aviationCurrentHistory = [
+              ...aviationCurrentHistory,
+              {
+                temp: lTemp,
+                exactTime: lExactTime,
+                syncedAt: lSyncedAt,
+                timestamp: nowGmt
+              }
+            ].slice(-60);
+            
+            aviationCurrentTemp = lTemp;
+            aviationCurrentExactTime = lExactTime;
+            aviationCurrentSyncedAt = lSyncedAt;
+          }
+        }
+      }
 
       // Forecast History Tracking (WU only)
       let forecastHistoryWu = existing?.forecastHistoryWu || [];
@@ -281,6 +326,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         wuSyncedAt,
         aviationExactTime,
         aviationSyncedAt,
+        aviationCurrentTemp,
+        aviationCurrentExactTime,
+        aviationCurrentSyncedAt,
+        aviationCurrentHistory,
         diff_wu_history_aviation_history:
           history?.temp != null && aviationHistory?.temp != null
             ? parseFloat((history.temp - aviationHistory.temp).toFixed(1))
@@ -348,6 +397,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       diff_wu_history_aviation_history: item.diff_wu_history_aviation_history,
       history_wu: item.wuHistoryList || [],
       history_aviation: item.aviationHistoryList || [],
+      temp_c_aviation_current: item.aviationCurrentTemp,
+      aviation_current_exact_time: item.aviationCurrentExactTime,
+      aviation_current_synced_at: item.aviationCurrentSyncedAt,
+      history_aviation_current: item.aviationCurrentHistory || [],
     }));
 
     for (const record of recordsToUpsert) {
@@ -359,8 +412,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           history_c_aviation, history_f_aviation, condition_history_wu, 
           condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
           wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
-          diff_wu_history_aviation_history, history_wu, history_aviation
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+          diff_wu_history_aviation_history, history_wu, history_aviation,
+          temp_c_aviation_current, aviation_current_exact_time, aviation_current_synced_at, history_aviation_current
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
         ON CONFLICT (city_name, timestamp_gmt) 
         DO UPDATE SET 
           station_id = EXCLUDED.station_id,
@@ -382,7 +436,11 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           aviation_synced_at = COALESCE(weather_records.aviation_synced_at, EXCLUDED.aviation_synced_at),
           diff_wu_history_aviation_history = EXCLUDED.diff_wu_history_aviation_history,
           history_wu = EXCLUDED.history_wu,
-          history_aviation = EXCLUDED.history_aviation
+          history_aviation = EXCLUDED.history_aviation,
+          temp_c_aviation_current = EXCLUDED.temp_c_aviation_current,
+          aviation_current_exact_time = EXCLUDED.aviation_current_exact_time,
+          aviation_current_synced_at = EXCLUDED.aviation_current_synced_at,
+          history_aviation_current = EXCLUDED.history_aviation_current
       `,
         [
           record.city_name,
@@ -407,6 +465,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.diff_wu_history_aviation_history,
           JSON.stringify(record.history_wu),
           JSON.stringify(record.history_aviation),
+          record.temp_c_aviation_current,
+          record.aviation_current_exact_time,
+          record.aviation_current_synced_at,
+          JSON.stringify(record.history_aviation_current),
         ],
       );
     }
@@ -486,6 +548,11 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
         ? Number(record.aviation_exact_time)
         : null,
       aviationSyncedAt: record.aviation_synced_at || null,
+      diff_wu_history_aviation_history: record.diff_wu_history_aviation_history,
+      aviationCurrentTemp: record.temp_c_aviation_current !== null ? Number(record.temp_c_aviation_current) : null,
+      aviationCurrentExactTime: record.aviation_current_exact_time ? Number(record.aviation_current_exact_time) : null,
+      aviationCurrentSyncedAt: record.aviation_current_synced_at || null,
+      aviationCurrentHistory: record.history_aviation_current || [],
     }));
 
     return {

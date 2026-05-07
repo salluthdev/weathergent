@@ -96,6 +96,10 @@ export default async function CityDetailPage({
           aviationExactTime: exactMatch?.aviationExactTime || null,
           aviationSyncedAt: exactMatch?.aviationSyncedAt || null,
           aviationHistoryList: exactMatch?.aviationHistoryList || [],
+          aviationCurrentTemp: exactMatch?.aviationCurrentTemp || null,
+          aviationCurrentExactTime: exactMatch?.aviationCurrentExactTime || null,
+          aviationCurrentSyncedAt: exactMatch?.aviationCurrentSyncedAt || null,
+          aviationCurrentHistory: exactMatch?.aviationCurrentHistory || [],
         };
       }
 
@@ -113,6 +117,10 @@ export default async function CityDetailPage({
           wuSyncedAt: null,
           aviationExactTime: null,
           aviationSyncedAt: null,
+          aviationCurrentTemp: null,
+          aviationCurrentExactTime: null,
+          aviationCurrentSyncedAt: null,
+          aviationCurrentHistory: [],
         }
       );
     });
@@ -153,6 +161,10 @@ export default async function CityDetailPage({
       aviationExactTime: null,
       aviationSyncedAt: null,
       aviationHistoryList: [],
+      aviationCurrentTemp: null,
+      aviationCurrentExactTime: null,
+      aviationCurrentSyncedAt: null,
+      aviationCurrentHistory: [],
     }));
   }
 
@@ -331,10 +343,12 @@ export default async function CityDetailPage({
                   <th className="p-4 font-semibold">City Time</th>
                   <th className="p-4 font-semibold">WIB Time</th>
                   <th className="p-4 font-semibold">Temp. History (WU)</th>
-                  <th className="p-4 font-semibold">
+                  <th className="p-4 font-semibold bg-blue-500/10">
                     Temp. History (Aviation)
                   </th>
-
+                  <th className="p-4 font-semibold bg-blue-500/20">
+                    Current Temp (Aviation)
+                  </th>
                   <th className="p-4 font-semibold">Temp. Forecast (WU)</th>
                   <th className="p-4 font-semibold">Condition History (WU)</th>
                   <th className="p-4 font-semibold">Condition Forecast (WU)</th>
@@ -428,6 +442,23 @@ export default async function CityDetailPage({
                                 source="Aviation"
                                 preferredUnit={cityData.preferredUnit}
                                 historyPoints={item.aviationHistoryList}
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 font-bold text-[#3d5516] bg-blue-500/10">
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {formatTemp(item.aviationCurrentTemp ?? null)}
+                            </span>
+                            {item.aviationCurrentHistory && item.aviationCurrentHistory.length > 0 && (
+                              <ObservationDetailPopup
+                                temp={item.aviationCurrentTemp}
+                                exactTime={item.aviationCurrentExactTime}
+                                syncedAt={item.aviationCurrentSyncedAt}
+                                source="Current Aviation"
+                                preferredUnit={cityData.preferredUnit}
+                                historyPoints={item.aviationCurrentHistory}
                               />
                             )}
                           </div>
