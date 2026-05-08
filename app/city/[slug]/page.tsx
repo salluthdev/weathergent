@@ -306,8 +306,8 @@ export default async function CityDetailPage({
         <h2 className="text-xl font-bold text-[#3d5516]">
           Detailed Observations
         </h2>
-        <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl">
-          <div className="overflow-x-auto">
+        <div className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl overflow-visible">
+          <div className="overflow-visible">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#3d5516] text-[#c8ea8e]">
