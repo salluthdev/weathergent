@@ -91,6 +91,16 @@ export async function GET(request: NextRequest) {
               aviationHistory: item.aviationHistoryList || [],
             }
           : null,
+        aviationTemperatureCurrent:
+          item.aviationCurrentTemp !== null &&
+          item.aviationCurrentTemp !== undefined
+            ? {
+                temp: item.aviationCurrentTemp,
+                aviationCurrentExactTime: item.aviationCurrentExactTime,
+                aviationCurrentSyncedAt: item.aviationCurrentSyncedAt,
+                aviationCurrentHistory: item.aviationCurrentHistory || [],
+              }
+            : null,
         wuForecast: item.wuForecast
           ? {
               ...item.wuForecast,
