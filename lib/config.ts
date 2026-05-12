@@ -19,7 +19,7 @@ export const CITIES: CityConfig[] = [
     timezone: "America/New_York",
     polySlug: "nyc",
     lat: 40.7769,
-    lon: -73.8740,
+    lon: -73.874,
     preferredUnit: "F",
   },
   {
@@ -52,7 +52,7 @@ export const CITIES: CityConfig[] = [
     timezone: "America/Los_Angeles",
     polySlug: "san-francisco",
     lat: 37.6213,
-    lon: -122.3790,
+    lon: -122.379,
     preferredUnit: "F",
   },
   {
@@ -129,7 +129,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Tokyo",
     polySlug: "tokyo",
     lat: 35.5497,
-    lon: 139.7870,
+    lon: 139.787,
     preferredUnit: "C",
   },
   {
@@ -228,7 +228,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Europe/Istanbul",
     polySlug: "ankara",
     lat: 40.1281,
-    lon: 32.9950,
+    lon: 32.995,
     preferredUnit: "C",
   },
   {
@@ -316,7 +316,7 @@ export const CITIES: CityConfig[] = [
     timezone: "America/Denver",
     polySlug: "denver",
     lat: 39.7018,
-    lon: -104.7520,
+    lon: -104.752,
     preferredUnit: "F",
   },
   {
@@ -349,7 +349,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Shanghai",
     polySlug: "chengdu",
     lat: 30.5583,
-    lon: 103.9460,
+    lon: 103.946,
     preferredUnit: "C",
   },
   {
@@ -360,7 +360,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Manila",
     polySlug: "manila",
     lat: 14.5086,
-    lon: 121.0200,
+    lon: 121.02,
     preferredUnit: "C",
   },
   {
@@ -393,7 +393,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Shanghai",
     polySlug: "guangzhou",
     lat: 23.3925,
-    lon: 113.2990,
+    lon: 113.299,
     preferredUnit: "C",
   },
   {
@@ -448,7 +448,7 @@ export const CITIES: CityConfig[] = [
     timezone: "America/Panama",
     polySlug: "panama-city",
     lat: 8.9733,
-    lon: -79.5550,
+    lon: -79.555,
     preferredUnit: "C",
   },
   {
@@ -470,7 +470,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Seoul",
     polySlug: "busan",
     lat: 35.1795,
-    lon: 128.9380,
+    lon: 128.938,
     preferredUnit: "C",
   },
   {
@@ -481,7 +481,7 @@ export const CITIES: CityConfig[] = [
     timezone: "America/Sao_Paulo",
     polySlug: "sao-paulo",
     lat: -23.4313,
-    lon: -46.4700,
+    lon: -46.47,
     preferredUnit: "C",
   },
   {
@@ -502,7 +502,7 @@ export const CITIES: CityConfig[] = [
     icao: "WIHH",
     timezone: "Asia/Jakarta",
     polySlug: "jakarta",
-    lat: -6.2670,
+    lat: -6.267,
     lon: 106.8903,
     preferredUnit: "C",
   },
@@ -514,7 +514,7 @@ export const CITIES: CityConfig[] = [
     timezone: "Asia/Kuala_Lumpur",
     polySlug: "kuala-lumpur",
     lat: 2.7456,
-    lon: 101.7100,
+    lon: 101.71,
     preferredUnit: "C",
   },
 ];
