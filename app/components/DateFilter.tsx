@@ -125,7 +125,7 @@ export default function DateFilter({
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
+      days.push(<div key={`empty-${i}`} className="h-14 w-full" />);
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
@@ -149,18 +149,18 @@ export default function DateFilter({
           key={d}
           onClick={() => handleDateSelect(dateStr)}
           title={title}
-          className={`h-10 w-10 rounded-lg transition-all flex flex-col items-center justify-center leading-none
+          className={`h-14 w-full rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 leading-none px-1
             ${
               isSelected
                 ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-105 z-10"
                 : isToday
                   ? "bg-[#c8ea8e] text-[#3d5516] ring-1 ring-[#3d5516]/20"
-                  : "hover:bg-[#3d5516]/10 text-[#3d5516]/60 hover:text-[#3d5516]"
+                  : "hover:bg-[#3d5516]/10 text-[#3d5516] hover:text-[#3d5516]"
             }
           `}
         >
           <span
-            className={`text-[10px] font-black ${
+            className={`text-sm font-black ${
               isSelected ? "" : "text-[#3d5516]"
             }`}
           >
@@ -168,19 +168,19 @@ export default function DateFilter({
           </span>
           {isPast && stat ? (
             <span
-              className={`text-[8px] font-bold mt-0.5 ${
-                isSelected ? "opacity-90" : "opacity-60"
+              className={`text-[11px] font-black ${
+                isSelected ? "opacity-90" : "opacity-80"
               }`}
             >
               {formatTemp(stat.maxC)}
             </span>
           ) : isPast && !loading ? (
-            <span className="text-[8px] font-bold opacity-20 mt-0.5">—</span>
+            <span className="text-[10px] font-bold opacity-20">—</span>
           ) : null}
           {isPast && stat ? (
             <span
-              className={`text-[6px] font-bold tracking-wide ${
-                isSelected ? "opacity-70" : "opacity-40"
+              className={`text-[9px] font-semibold tracking-wide ${
+                isSelected ? "opacity-70" : "opacity-50"
               }`}
             >
               {formatHourLocal(stat.timestamp)}
@@ -212,7 +212,7 @@ export default function DateFilter({
             </svg>
           </button>
 
-          <span className="font-black text-[#3d5516] text-[8px] uppercase tracking-widest opacity-40">
+          <span className="font-black text-[#3d5516] text-xs uppercase tracking-widest opacity-50">
             {monthName} {year}
           </span>
 
@@ -235,11 +235,11 @@ export default function DateFilter({
             </svg>
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-0.5 place-items-center">
+        <div className="grid grid-cols-7 gap-1">
           {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
             <div
               key={`${day}-${i}`}
-              className="h-6 w-10 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20"
+              className="h-6 w-full flex items-center justify-center text-[10px] font-black text-[#3d5516]/30 uppercase"
             >
               {day}
             </div>
