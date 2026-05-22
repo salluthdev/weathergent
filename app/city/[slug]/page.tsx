@@ -6,6 +6,7 @@ import { getCityBySlug } from "@/lib/config";
 import { getWeatherFromDb, syncCityData } from "@/lib/weather-service";
 import ForecastHistoryPopup from "@/app/components/ForecastHistoryPopup";
 import ObservationDetailPopup from "@/app/components/ObservationDetailPopup";
+import WeatherDetailPopup from "@/app/components/WeatherDetailPopup";
 import TemperatureChart from "@/app/components/TemperatureChart";
 import AutoRefresh from "@/app/components/AutoRefresh";
 
@@ -64,6 +65,7 @@ export default async function CityDetailPage({
 
       // Inheritance logic: If no forecast for this slot, look at the previous slot's forecast
       let inheritedForecast = existing?.wuForecast || null;
+      let inheritedForecastDetail = existing?.forecastDetailWu || null;
       if (!inheritedForecast && i > 0) {
         // Look back up to 2 slots (1 hour) to find a forecast to inherit
         const prevSlot = hourlyReport.find(
@@ -71,6 +73,7 @@ export default async function CityDetailPage({
         );
         if (prevSlot?.wuForecast) {
           inheritedForecast = prevSlot.wuForecast;
+          inheritedForecastDetail = prevSlot.forecastDetailWu || null;
         }
       }
 
@@ -92,6 +95,8 @@ export default async function CityDetailPage({
           aviationCurrentExactTime: null,
           aviationCurrentSyncedAt: null,
           aviationCurrentHistory: [],
+          forecastDetailWu: inheritedForecastDetail,
+          historyDetailWu: null,
           diff_wu_history_aviation_history: null,
         }
       );
@@ -135,6 +140,8 @@ export default async function CityDetailPage({
       aviationCurrentExactTime: null,
       aviationCurrentSyncedAt: null,
       aviationCurrentHistory: [],
+      forecastDetailWu: null,
+      historyDetailWu: null,
       diff_wu_history_aviation_history: null,
     }));
   }
@@ -465,14 +472,44 @@ export default async function CityDetailPage({
                           </div>
                         </td>
                         <td className="p-4 text-[#3d5516]/80 text-sm">
-                          {item.wuHistory?.condition ||
-                            item.wuHistory?.wx_phrase ||
-                            "-"}
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {item.wuHistory?.condition ||
+                                item.wuHistory?.wx_phrase ||
+                                "-"}
+                            </span>
+                            {(item.historyDetailWu ||
+                              (item.wuHistoryList || []).some(
+                                (h: { detail?: unknown }) => h?.detail,
+                              )) && (
+                              <WeatherDetailPopup
+                                detail={item.historyDetailWu}
+                                history={item.wuHistoryList}
+                                variant="history"
+                                preferredUnit={cityData.preferredUnit}
+                              />
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 text-[#3d5516]/80 text-sm italic opacity-70">
-                          {item.wuForecast?.condition ||
-                            item.wuForecast?.phrase ||
-                            "-"}
+                          <div className="flex items-center gap-1">
+                            <span>
+                              {item.wuForecast?.condition ||
+                                item.wuForecast?.phrase ||
+                                "-"}
+                            </span>
+                            {(item.forecastDetailWu ||
+                              (item.forecastHistoryWu || []).some(
+                                (h: { detail?: unknown }) => h?.detail,
+                              )) && (
+                              <WeatherDetailPopup
+                                detail={item.forecastDetailWu}
+                                history={item.forecastHistoryWu}
+                                variant="forecast"
+                                preferredUnit={cityData.preferredUnit}
+                              />
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-[#3d5516]/80 bg-orange-500/5 text-right">
                           {item.wuHistory && item.aviationHistory

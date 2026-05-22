@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS weather_records (
     aviation_synced_at TIMESTAMPTZ,
     diff_wu_history_aviation_history NUMERIC,
     diff_wu_history_wu_forecast NUMERIC,
+    forecast_detail_wu JSONB,
+    history_detail_wu JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     
     -- Ensure unique records per city and time slot
@@ -37,3 +39,9 @@ CREATE INDEX IF NOT EXISTS idx_weather_records_city_date ON weather_records (cit
 COMMENT ON TABLE weather_records IS 'Stores 30-minute interval weather observations and forecasts.';
 COMMENT ON COLUMN weather_records.wu_exact_time IS 'Exact observation timestamp from Wunderground API';
 COMMENT ON COLUMN weather_records.aviation_exact_time IS 'Exact report timestamp from METAR API';
+COMMENT ON COLUMN weather_records.forecast_detail_wu IS 'Snapshot of WU forecast detail fields (feelsLike, precipChance, qpf, cloudCover, dewPoint, humidity, windSpeed, windDirection, pressure)';
+COMMENT ON COLUMN weather_records.history_detail_wu IS 'Snapshot of WU history detail fields (feelsLike, precip, cloudCover, dewPoint, humidity, windSpeed, windDirection, pressure)';
+
+-- Idempotent migration for existing databases
+ALTER TABLE weather_records ADD COLUMN IF NOT EXISTS forecast_detail_wu JSONB;
+ALTER TABLE weather_records ADD COLUMN IF NOT EXISTS history_detail_wu JSONB;

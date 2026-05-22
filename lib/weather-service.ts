@@ -21,9 +21,69 @@ export interface HourlyReportItem {
   aviationCurrentExactTime?: number | null;
   aviationCurrentSyncedAt?: string | null;
   aviationCurrentTemp?: number | null;
+  forecastDetailWu?: WuForecastDetail | null;
+  historyDetailWu?: WuHistoryDetail | null;
+}
+
+export interface WuForecastDetail {
+  feelsLike: number | null;
+  precipChance: number | null;
+  qpf: number | null;
+  cloudCover: number | null;
+  dewPoint: number | null;
+  humidity: number | null;
+  windSpeed: number | null;
+  windDirection: string | null;
+  pressure: number | null;
+}
+
+export interface WuHistoryDetail {
+  feelsLike: number | null;
+  precip: number | null;
+  cloudCover: string | number | null;
+  dewPoint: number | null;
+  humidity: number | null;
+  windSpeed: number | null;
+  windDirection: string | null;
+  pressure: number | null;
 }
 
 const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
+
+const pickNum = (v: any): number | null =>
+  v === null || v === undefined || Number.isNaN(Number(v)) ? null : Number(v);
+
+const extractForecastDetail = (
+  src: any,
+  i: number,
+): WuForecastDetail | null => {
+  if (!src || i === undefined || i === null || i < 0) return null;
+  return {
+    feelsLike: pickNum(src.temperatureFeelsLike?.[i]),
+    precipChance: pickNum(src.precipChance?.[i]),
+    qpf: pickNum(src.qpf?.[i]),
+    cloudCover: pickNum(src.cloudCover?.[i]),
+    dewPoint: pickNum(src.temperatureDewPoint?.[i] ?? src.dewPoint?.[i]),
+    humidity: pickNum(src.relativeHumidity?.[i]),
+    windSpeed: pickNum(src.windSpeed?.[i]),
+    windDirection: src.windDirectionCardinal?.[i] ?? null,
+    pressure: pickNum(src.pressureMeanSeaLevel?.[i]),
+  };
+};
+
+const extractHistoryDetail = (obs: any): WuHistoryDetail | null => {
+  if (!obs) return null;
+  return {
+    feelsLike: pickNum(obs.feels_like),
+    precip: pickNum(obs.precip_hrly ?? obs.precip_total),
+    cloudCover: obs.clds ?? null,
+    dewPoint: pickNum(obs.dewPt),
+    humidity: pickNum(obs.rh),
+    windSpeed: pickNum(obs.wspd),
+    windDirection: obs.wdir_cardinal ?? null,
+    pressure: pickNum(obs.pressure),
+  };
+};
 
 export async function syncCityData(city: CityConfig, targetDate: string) {
   console.log(`[Sync] Starting sync for ${city.name} (${targetDate})...`);
@@ -160,6 +220,10 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           }
         : existing?.wuHistory || null;
 
+      let historyDetailWu: WuHistoryDetail | null = historyEntry
+        ? extractHistoryDetail(historyEntry)
+        : (existing as HourlyReportItem | undefined)?.historyDetailWu || null;
+
       let wuExactTime =
         historyEntry?.valid_time_gmt || existing?.wuExactTime || null;
       let wuSyncedAt = historyEntry
@@ -183,6 +247,18 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           };
           wuExactTime = currentData.validTimeUtc;
           wuSyncedAt = new Date().toISOString();
+          historyDetailWu = {
+            feelsLike: pickNum(currentData.temperatureFeelsLike),
+            precip: pickNum(
+              currentData.precip1Hour ?? currentData.precipTotalAmount,
+            ),
+            cloudCover: pickNum(currentData.cloudCoverPhrase ?? null),
+            dewPoint: pickNum(currentData.temperatureDewPoint),
+            humidity: pickNum(currentData.relativeHumidity),
+            windSpeed: pickNum(currentData.windSpeed),
+            windDirection: currentData.windDirectionCardinal ?? null,
+            pressure: pickNum(currentData.pressureMeanSeaLevel),
+          };
         }
       }
 
@@ -202,13 +278,17 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       }
 
       let forecast = null;
+      let forecastDetailWu: WuForecastDetail | null = null;
       if (forecastIndex !== undefined && forecastIndex !== -1) {
         forecast = {
           temp: hourlyForecast.temperature[forecastIndex],
           condition: hourlyForecast.wxPhraseShort[forecastIndex],
         };
+        forecastDetailWu = extractForecastDetail(hourlyForecast, forecastIndex);
       } else if (existing?.wuForecast) {
         forecast = existing.wuForecast;
+        forecastDetailWu =
+          (existing as HourlyReportItem | undefined)?.forecastDetailWu || null;
       }
 
       // New API data for Aviation History (METAR)
@@ -302,6 +382,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               temp: existing.wuForecast.temp,
               condition: existing.wuForecast.condition,
               updated_at: existing.forecastUpdatedAtWu,
+              detail:
+                (existing as HourlyReportItem | undefined)?.forecastDetailWu ||
+                null,
             },
           ];
           forecastUpdatedAtWu = new Date().toISOString();
@@ -320,6 +403,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
               condition: existing.wuHistory.condition,
               exactTime: existing.wuExactTime,
               syncedAt: existing.wuSyncedAt,
+              detail:
+                (existing as HourlyReportItem | undefined)?.historyDetailWu ||
+                null,
             },
           ];
         }
@@ -359,6 +445,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
         aviationCurrentExactTime,
         aviationCurrentSyncedAt,
         aviationCurrentHistory,
+        forecastDetailWu,
+        historyDetailWu,
         diff_wu_history_aviation_history:
           history?.temp != null && aviationHistory?.temp != null
             ? parseFloat((history.temp - aviationHistory.temp).toFixed(1))
@@ -430,6 +518,8 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
       aviation_current_exact_time: item.aviationCurrentExactTime,
       aviation_current_synced_at: item.aviationCurrentSyncedAt,
       history_aviation_current: item.aviationCurrentHistory || [],
+      forecast_detail_wu: item.forecastDetailWu ?? null,
+      history_detail_wu: item.historyDetailWu ?? null,
     }));
 
     for (const record of recordsToUpsert) {
@@ -442,8 +532,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           condition_forecast_wu, forecast_history_wu, forecast_updated_at_wu, 
           wu_exact_time, wu_synced_at, aviation_exact_time, aviation_synced_at, 
           diff_wu_history_aviation_history, history_wu, history_aviation,
-          temp_c_aviation_current, aviation_current_exact_time, aviation_current_synced_at, history_aviation_current
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+          temp_c_aviation_current, aviation_current_exact_time, aviation_current_synced_at, history_aviation_current,
+          forecast_detail_wu, history_detail_wu
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
         ON CONFLICT (city_name, timestamp_gmt) 
         DO UPDATE SET 
           station_id = EXCLUDED.station_id,
@@ -469,7 +560,9 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           temp_c_aviation_current = EXCLUDED.temp_c_aviation_current,
           aviation_current_exact_time = EXCLUDED.aviation_current_exact_time,
           aviation_current_synced_at = EXCLUDED.aviation_current_synced_at,
-          history_aviation_current = EXCLUDED.history_aviation_current
+          history_aviation_current = EXCLUDED.history_aviation_current,
+          forecast_detail_wu = EXCLUDED.forecast_detail_wu,
+          history_detail_wu = EXCLUDED.history_detail_wu
       `,
         [
           record.city_name,
@@ -498,6 +591,12 @@ export async function syncCityData(city: CityConfig, targetDate: string) {
           record.aviation_current_exact_time,
           record.aviation_current_synced_at,
           JSON.stringify(record.history_aviation_current),
+          record.forecast_detail_wu
+            ? JSON.stringify(record.forecast_detail_wu)
+            : null,
+          record.history_detail_wu
+            ? JSON.stringify(record.history_detail_wu)
+            : null,
         ],
       );
     }
@@ -587,6 +686,8 @@ export async function getWeatherFromDb(city: CityConfig, targetDate: string) {
         : null,
       aviationCurrentSyncedAt: record.aviation_current_synced_at || null,
       aviationCurrentHistory: record.history_aviation_current || [],
+      forecastDetailWu: record.forecast_detail_wu || null,
+      historyDetailWu: record.history_detail_wu || null,
     }));
 
     return {
