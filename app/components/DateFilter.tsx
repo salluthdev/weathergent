@@ -1,20 +1,30 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface DateFilterProps {
   initialDate: string;
   timezone: string;
+  citySlug: string;
+  preferredUnit: "C" | "F";
 }
 
-export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
+interface DailyMax {
+  maxC: number;
+  timestamp: number;
+}
+
+export default function DateFilter({
+  initialDate,
+  timezone,
+  citySlug,
+  preferredUnit,
+}: DateFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Track the currently viewed month in the calendar
-  // Use the initialDate as the starting reference
   const getInitialRefDate = () => {
     const y = parseInt(initialDate.slice(0, 4));
     const m = parseInt(initialDate.slice(4, 6)) - 1;
@@ -22,6 +32,31 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
   };
 
   const [viewDate, setViewDate] = useState(getInitialRefDate());
+  const [dailyMax, setDailyMax] = useState<Record<string, DailyMax>>({});
+  const [loading, setLoading] = useState(false);
+
+  const monthKey = `${viewDate.getFullYear()}${(viewDate.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}`;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/city-daily-max?city=${citySlug}&month=${monthKey}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data?.success) {
+          setDailyMax(data.days || {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [citySlug, monthKey]);
 
   const formatDateStr = (date: Date, tz: string) => {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -50,6 +85,29 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
     );
   };
 
+  const toF = (c: number) => parseFloat(((c * 9) / 5 + 32).toFixed(1));
+  const formatTemp = (c: number) =>
+    preferredUnit === "F" ? `${toF(c)}°` : `${c}°`;
+
+  const formatHourLocal = (ts: number) =>
+    new Date(ts * 1000).toLocaleString("en-US", {
+      timeZone: timezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+  const formatFullLocal = (ts: number) =>
+    new Date(ts * 1000).toLocaleString("en-US", {
+      timeZone: timezone,
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
   const renderMonth = () => {
     const monthName = viewDate.toLocaleString("en-US", { month: "short" });
     const year = viewDate.getFullYear();
@@ -67,7 +125,7 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
 
     const days = [];
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-6 w-6" />);
+      days.push(<div key={`empty-${i}`} className="h-10 w-10" />);
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
@@ -79,22 +137,55 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
 
       const isSelected = dateStr === initialDate;
       const isToday = dateStr === todayStr;
+      const isPast = dateStr < todayStr;
+      const stat = dailyMax[dateStr];
+
+      const title = stat
+        ? `Max ${formatTemp(stat.maxC)} at ${formatFullLocal(stat.timestamp)}`
+        : undefined;
 
       days.push(
         <button
           key={d}
           onClick={() => handleDateSelect(dateStr)}
-          className={`h-6 w-6 rounded-lg text-[9px] font-black transition-all flex items-center justify-center
+          title={title}
+          className={`h-10 w-10 rounded-lg transition-all flex flex-col items-center justify-center leading-none
             ${
               isSelected
-                ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-110 z-10"
+                ? "bg-[#3d5516] text-[#c8ea8e] shadow-md scale-105 z-10"
                 : isToday
                   ? "bg-[#c8ea8e] text-[#3d5516] ring-1 ring-[#3d5516]/20"
                   : "hover:bg-[#3d5516]/10 text-[#3d5516]/60 hover:text-[#3d5516]"
             }
           `}
         >
-          {d}
+          <span
+            className={`text-[10px] font-black ${
+              isSelected ? "" : "text-[#3d5516]"
+            }`}
+          >
+            {d}
+          </span>
+          {isPast && stat ? (
+            <span
+              className={`text-[8px] font-bold mt-0.5 ${
+                isSelected ? "opacity-90" : "opacity-60"
+              }`}
+            >
+              {formatTemp(stat.maxC)}
+            </span>
+          ) : isPast && !loading ? (
+            <span className="text-[8px] font-bold opacity-20 mt-0.5">—</span>
+          ) : null}
+          {isPast && stat ? (
+            <span
+              className={`text-[6px] font-bold tracking-wide ${
+                isSelected ? "opacity-70" : "opacity-40"
+              }`}
+            >
+              {formatHourLocal(stat.timestamp)}
+            </span>
+          ) : null}
         </button>,
       );
     }
@@ -145,10 +236,10 @@ export default function DateFilter({ initialDate, timezone }: DateFilterProps) {
           </button>
         </div>
         <div className="grid grid-cols-7 gap-0.5 place-items-center">
-          {["S", "M", "T", "W", "T", "F", "S"].map((day) => (
+          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
             <div
-              key={day}
-              className="h-6 w-6 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20"
+              key={`${day}-${i}`}
+              className="h-6 w-10 flex items-center justify-center text-[7px] font-black text-[#3d5516]/20"
             >
               {day}
             </div>

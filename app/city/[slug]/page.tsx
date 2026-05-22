@@ -282,7 +282,12 @@ export default async function CityDetailPage({
           </div>
 
           {/* Calendar Navigator now lives in the sidebar */}
-          <DateFilter initialDate={targetDate} timezone={cityData.timezone} />
+          <DateFilter
+            initialDate={targetDate}
+            timezone={cityData.timezone}
+            citySlug={cityData.slug}
+            preferredUnit={cityData.preferredUnit}
+          />
         </div>
 
         {/* Chart Area */}
