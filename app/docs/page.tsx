@@ -166,6 +166,85 @@ export default function DocsPage() {
               </div>
             </div>
 
+            <div className="flex flex-col gap-4">
+              <h3 className="text-xs font-black text-[#3d5516]/40 uppercase tracking-widest">
+                Weather Detail Fields
+              </h3>
+              <p className="text-[#3d5516]/70 text-sm">
+                Each <code className="bg-white/50 px-1 rounded">wuTemperatureHistory</code>{" "}
+                and <code className="bg-white/50 px-1 rounded">wuForecast</code>{" "}
+                object includes a <code className="bg-white/50 px-1 rounded">detail</code>{" "}
+                snapshot. Historical entries inside{" "}
+                <code className="bg-white/50 px-1 rounded">wuHistory</code> and{" "}
+                <code className="bg-white/50 px-1 rounded">wuForecastHistory</code>{" "}
+                each carry their own <code className="bg-white/50 px-1 rounded">detail</code>{" "}
+                at the time of capture.
+              </p>
+              <div className="overflow-hidden rounded-2xl border border-[#3d5516]/10">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-[#3d5516]/5">
+                    <tr>
+                      <th className="p-4 font-bold text-[#3d5516]">Field</th>
+                      <th className="p-4 font-bold text-[#3d5516]">Source</th>
+                      <th className="p-4 font-bold text-[#3d5516]">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#3d5516]/5 text-xs">
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">feelsLike</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Apparent temperature (°C)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">precipChance</td>
+                      <td className="p-3 text-[#3d5516]/60">forecast</td>
+                      <td className="p-3 text-[#3d5516]/80">Probability of precipitation (%)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">qpf</td>
+                      <td className="p-3 text-[#3d5516]/60">forecast</td>
+                      <td className="p-3 text-[#3d5516]/80">Forecast precipitation amount (mm)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">precip</td>
+                      <td className="p-3 text-[#3d5516]/60">history</td>
+                      <td className="p-3 text-[#3d5516]/80">Observed precipitation (mm, hourly)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">cloudCover</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">% for forecast, METAR sky code for history</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">dewPoint</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Dew point (°C)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">humidity</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Relative humidity (%)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">windSpeed</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Wind speed (km/h)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">windDirection</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Cardinal direction (e.g., NE, SSW)</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-mono font-bold text-[#3d5516]">pressure</td>
+                      <td className="p-3 text-[#3d5516]/60">both</td>
+                      <td className="p-3 text-[#3d5516]/80">Mean sea-level pressure (mb)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div className="bg-[#1a2b00] rounded-2xl p-6 shadow-inner overflow-x-auto">
               <pre className="text-xs text-[#c8ea8e]/80 leading-relaxed font-mono">
                 {`{
@@ -179,16 +258,44 @@ export default function DocsPage() {
   "data": [
     {
       "timestamp": 1713916800,
-      "wuTemperatureHistory": { "temp": 28, "condition": "Partly Cloudy", "wuExactTime": 1713916740, "wuSyncedAt": "2024-04-24T00:02:15Z" },
+      "wuTemperatureHistory": {
+        "temp": 28,
+        "condition": "Partly Cloudy",
+        "wuExactTime": 1713916740,
+        "wuSyncedAt": "2024-04-24T00:02:15Z",
+        "detail": {
+          "feelsLike": 32,
+          "precip": 0,
+          "cloudCover": "SCT",
+          "dewPoint": 24,
+          "humidity": 78,
+          "windSpeed": 11,
+          "windDirection": "SE",
+          "pressure": 1010
+        },
+        "wuHistory": []
+      },
       "aviationTemperatureHistory": { "temp": 28.1, "aviationExactTime": 1713916800, "aviationSyncedAt": "2024-04-24T00:05:00Z" },
-      "wuForecast": { 
-        "temp": 29, 
-        "condition": "Scattered Clouds", 
-        "updated_at": "2024-04-24T02:30:00Z", 
+      "aviationTemperatureCurrent": null,
+      "wuForecast": {
+        "temp": 29,
+        "condition": "Scattered Clouds",
+        "updated_at": "2024-04-24T02:30:00Z",
+        "detail": {
+          "feelsLike": 33,
+          "precipChance": 42,
+          "qpf": 1.2,
+          "cloudCover": 65,
+          "dewPoint": 24,
+          "humidity": 76,
+          "windSpeed": 12,
+          "windDirection": "SE",
+          "pressure": 1010
+        },
         "wuForecastHistory": [
-          { "temp": 27, "condition": "Partly Cloudy", "updated_at": "2024-04-24T00:00:00Z" },
-          { "temp": 28, "condition": "Scattered Clouds", "updated_at": "2024-04-24T01:15:00Z" }
-        ] 
+          { "temp": 27, "condition": "Partly Cloudy", "updated_at": "2024-04-24T00:00:00Z", "detail": { "feelsLike": 30, "precipChance": 30, "qpf": 0.5, "cloudCover": 55, "dewPoint": 23, "humidity": 74, "windSpeed": 10, "windDirection": "S", "pressure": 1011 } },
+          { "temp": 28, "condition": "Scattered Clouds", "updated_at": "2024-04-24T01:15:00Z", "detail": { "feelsLike": 31, "precipChance": 35, "qpf": 0.8, "cloudCover": 60, "dewPoint": 23, "humidity": 75, "windSpeed": 11, "windDirection": "SE", "pressure": 1010 } }
+        ]
       }
     }
   ]

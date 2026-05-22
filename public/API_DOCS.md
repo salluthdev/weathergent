@@ -72,27 +72,72 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
         "temp": 28,
         "condition": "Partly Cloudy",
         "wuExactTime": 1713916740,
-        "wuSyncedAt": "2024-04-24T00:02:15Z"
+        "wuSyncedAt": "2024-04-24T00:02:15Z",
+        "detail": {
+          "feelsLike": 32,
+          "precip": 0,
+          "cloudCover": "SCT",
+          "dewPoint": 24,
+          "humidity": 78,
+          "windSpeed": 11,
+          "windDirection": "SE",
+          "pressure": 1010
+        },
+        "wuHistory": []
       },
       "aviationTemperatureHistory": {
         "temp": 28.1,
         "aviationExactTime": 1713916800,
         "aviationSyncedAt": "2024-04-24T00:05:00Z"
       },
+      "aviationTemperatureCurrent": null,
       "wuForecast": {
         "temp": 29,
         "condition": "Scattered Clouds",
         "updated_at": "2024-04-24T02:30:00Z",
+        "detail": {
+          "feelsLike": 33,
+          "precipChance": 42,
+          "qpf": 1.2,
+          "cloudCover": 65,
+          "dewPoint": 24,
+          "humidity": 76,
+          "windSpeed": 12,
+          "windDirection": "SE",
+          "pressure": 1010
+        },
         "wuForecastHistory": [
           {
             "temp": 27,
             "condition": "Partly Cloudy",
-            "updated_at": "2024-04-24T00:00:00Z"
+            "updated_at": "2024-04-24T00:00:00Z",
+            "detail": {
+              "feelsLike": 30,
+              "precipChance": 30,
+              "qpf": 0.5,
+              "cloudCover": 55,
+              "dewPoint": 23,
+              "humidity": 74,
+              "windSpeed": 10,
+              "windDirection": "S",
+              "pressure": 1011
+            }
           },
           {
             "temp": 28,
             "condition": "Scattered Clouds",
-            "updated_at": "2024-04-24T01:15:00Z"
+            "updated_at": "2024-04-24T01:15:00Z",
+            "detail": {
+              "feelsLike": 31,
+              "precipChance": 35,
+              "qpf": 0.8,
+              "cloudCover": 60,
+              "dewPoint": 23,
+              "humidity": 75,
+              "windSpeed": 11,
+              "windDirection": "SE",
+              "pressure": 1010
+            }
           }
         ]
       }
@@ -100,6 +145,25 @@ Fetch detailed hourly observations and forecasts for a specific city on a specif
   ]
 }
 ```
+
+### Weather Detail Fields
+
+Each `wuTemperatureHistory` and `wuForecast` object includes a `detail` snapshot. Historical entries inside `wuHistory` and `wuForecastHistory` each carry their own `detail` at the time of capture.
+
+| Field           | Source   | Description                                          |
+| --------------- | -------- | ---------------------------------------------------- |
+| `feelsLike`     | both     | Apparent temperature (°C).                           |
+| `precipChance`  | forecast | Probability of precipitation (%).                    |
+| `qpf`           | forecast | Forecast precipitation amount (mm).                  |
+| `precip`        | history  | Observed precipitation (mm, hourly).                 |
+| `cloudCover`    | both     | % for forecast, METAR sky code (e.g. `SCT`) for history. |
+| `dewPoint`      | both     | Dew point (°C).                                      |
+| `humidity`      | both     | Relative humidity (%).                               |
+| `windSpeed`     | both     | Wind speed (km/h).                                   |
+| `windDirection` | both     | Cardinal direction (e.g. `NE`, `SSW`).               |
+| `pressure`      | both     | Mean sea-level pressure (mb).                        |
+
+Any field may be `null` when the source API did not provide that measurement for the slot.
 
 ---
 

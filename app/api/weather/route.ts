@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
               ...item.wuHistory,
               wuExactTime: item.wuExactTime,
               wuSyncedAt: item.wuSyncedAt,
+              detail: item.historyDetailWu || null,
               wuHistory: item.wuHistoryList || [],
             }
           : null,
@@ -105,6 +106,7 @@ export async function GET(request: NextRequest) {
           ? {
               ...item.wuForecast,
               updated_at: item.forecastUpdatedAtWu,
+              detail: item.forecastDetailWu || null,
               wuForecastHistory: item.forecastHistoryWu || [],
             }
           : null,
