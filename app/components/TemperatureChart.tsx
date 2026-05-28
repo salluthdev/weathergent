@@ -47,16 +47,16 @@ export default function TemperatureChart({
     };
   });
 
-  // Data points with valid history
+  // Data points with valid history (Aviation/METAR)
   const validPoints = data
     .map((item, i) => {
-      if (!item.wuHistory) return null;
+      if (!item.aviationHistory) return null;
       return {
-        item: item.wuHistory,
+        item: item.aviationHistory,
         timestamp: item.timestamp,
         index: i,
         x: (i / (data.length - 1)) * 1000,
-        y: 180 - ((item.wuHistory.temp - chartMin) / range) * 160,
+        y: 180 - ((item.aviationHistory.temp - chartMin) / range) * 160,
       };
     })
     .filter((p): p is any => p !== null);

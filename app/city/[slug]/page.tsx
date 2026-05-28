@@ -147,22 +147,20 @@ export default async function CityDetailPage({
   }
 
   // Common UI State Logic (Unified for both DB and API sources)
-  const cityObservations = hourlyReport
-    .filter((h: any) => h.wuHistory)
-    .map((h: any) => ({ ...h.wuHistory, valid_time_gmt: h.timestamp }));
-
-  const hasData = cityObservations.length > 0;
-  const temps = cityObservations.map((obs: any) => obs.temp);
   const maxTemp =
     hourlyReport.length > 0
       ? Math.max(
           ...hourlyReport.map((h: any) => h.wuHistory?.temp ?? -Infinity),
         )
       : null;
-  const minTemp =
-    hourlyReport.length > 0
-      ? Math.min(...hourlyReport.map((h: any) => h.wuHistory?.temp ?? Infinity))
-      : null;
+
+  const aviationTemps = hourlyReport
+    .map((h: any) => h.aviationHistory?.temp)
+    .filter((t: number | null | undefined) => t !== null && t !== undefined);
+  const aviationMax =
+    aviationTemps.length > 0 ? Math.max(...aviationTemps) : null;
+  const aviationMin =
+    aviationTemps.length > 0 ? Math.min(...aviationTemps) : null;
 
   const forecastMax =
     hourlyReport.length > 0
@@ -294,7 +292,8 @@ export default async function CityDetailPage({
         <div className="lg:col-span-2 p-6 rounded-2xl bg-white/40 backdrop-blur-md border border-white/20 shadow-xl flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-[#3d5516]">
-              24h Temperature Trend {hasData ? "" : "(No Data Available)"}
+              24h Temperature Trend (Aviation){" "}
+              {aviationMin !== null ? "" : "(No Data Available)"}
             </h2>
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-[#3d5516]"></span>
@@ -306,8 +305,8 @@ export default async function CityDetailPage({
 
           <TemperatureChart
             data={hourlyReport}
-            minTemp={minTemp}
-            maxTemp={maxTemp}
+            minTemp={aviationMin}
+            maxTemp={aviationMax}
             timezone={cityData.timezone}
             preferredUnit={cityData.preferredUnit}
           />
