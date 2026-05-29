@@ -162,6 +162,12 @@ export default async function CityDetailPage({
   const aviationMin =
     aviationTemps.length > 0 ? Math.min(...aviationTemps) : null;
 
+  const aviationCurrentTemps = hourlyReport
+    .map((h: any) => h.aviationCurrentTemp)
+    .filter((t: number | null | undefined) => t !== null && t !== undefined);
+  const aviationCurrentMax =
+    aviationCurrentTemps.length > 0 ? Math.max(...aviationCurrentTemps) : null;
+
   const forecastMax =
     hourlyReport.length > 0
       ? Math.max(
@@ -192,6 +198,23 @@ export default async function CityDetailPage({
   const lastMaxForecastIdx = hourlyReport.reduce(
     (acc, curr, idx) =>
       curr.wuForecast?.temp === forecastMax && forecastMax !== null ? idx : acc,
+    -1,
+  );
+
+  const lastMaxAviationHistoryIdx = hourlyReport.reduce(
+    (acc, curr, idx) =>
+      curr.aviationHistory?.temp === aviationMax && aviationMax !== null
+        ? idx
+        : acc,
+    -1,
+  );
+
+  const lastMaxAviationCurrentIdx = hourlyReport.reduce(
+    (acc, curr, idx) =>
+      curr.aviationCurrentTemp === aviationCurrentMax &&
+      aviationCurrentMax !== null
+        ? idx
+        : acc,
     -1,
   );
 
@@ -356,7 +379,15 @@ export default async function CityDetailPage({
                   hourlyReport.map((item: any, idx: number) => {
                     const isPeakHistory = idx === lastMaxHistoryIdx;
                     const isPeakForecast = idx === lastMaxForecastIdx;
-                    const isAnyPeak = isPeakHistory || isPeakForecast;
+                    const isPeakAviationHistory =
+                      idx === lastMaxAviationHistoryIdx;
+                    const isPeakAviationCurrent =
+                      idx === lastMaxAviationCurrentIdx;
+                    const isAnyPeak =
+                      isPeakHistory ||
+                      isPeakForecast ||
+                      isPeakAviationHistory ||
+                      isPeakAviationCurrent;
 
                     return (
                       <tr
@@ -423,7 +454,9 @@ export default async function CityDetailPage({
                             )}
                           </div>
                         </td>
-                        <td className="p-4 font-bold text-[#3d5516] bg-blue-500/5">
+                        <td
+                          className={`p-4 font-bold text-[#3d5516] transition-all ${idx === lastMaxAviationHistoryIdx ? "bg-orange-400/20 ring-1 ring-orange-400/30 rounded-sm" : "bg-blue-500/5"}`}
+                        >
                           <div className="flex items-center gap-1">
                             <span>
                               {formatTemp(item.aviationHistory?.temp ?? null)}
@@ -440,7 +473,9 @@ export default async function CityDetailPage({
                             )}
                           </div>
                         </td>
-                        <td className="p-4 font-bold text-[#3d5516] bg-blue-500/10">
+                        <td
+                          className={`p-4 font-bold text-[#3d5516] transition-all ${idx === lastMaxAviationCurrentIdx ? "bg-orange-400/20 ring-1 ring-orange-400/30 rounded-sm" : "bg-blue-500/10"}`}
+                        >
                           <div className="flex items-center gap-1">
                             <span>
                               {formatTemp(item.aviationCurrentTemp ?? null)}
